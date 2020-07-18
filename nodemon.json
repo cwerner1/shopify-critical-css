@@ -1,0 +1,15 @@
+{
+	"verbose": true,
+	"ignore": ["node_modules", ".next", "static"],
+	"watch": [
+			"lib/*",
+			"lib/**/*",
+			"routes/**",
+			"routes/**/*",
+			"server.js",
+			"store.js",
+			"next.config.js",
+			".babelrc.js"
+	],
+	"ext": "js jsx json"
+}

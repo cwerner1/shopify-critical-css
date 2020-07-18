@@ -6,7 +6,7 @@ const next = require('next');
 const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
-const generate = require('./generate');
+const generate = require('./routes/generate');
 
 dotenv.config();
 
@@ -31,7 +31,7 @@ app.prepare().then(() => {
 			const { shop, accessToken } = ctx.session;
 			console.log(`Authenticated for ${shop} with token: ${accessToken}`)
 			ctx.token = accessToken;
-			ctx.redirect('/')
+			ctx.redirect(`https://${shop}/admin/apps/critical-css`)
 		}
 	}))
 

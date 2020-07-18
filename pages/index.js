@@ -8,10 +8,9 @@ const Index = () => (
 			<EmptyState 
 				heading="Speed up your site with Critical CSS"
 				action={{
-					content: 'Select products',
+					content: 'Generate Critical CSS',
 					onAction: () => {
-						console.log('clicked');
-						fetch('/api/generate').then(res => res.json()).then(res => console.log(res));
+						fetch('/generate').then(res => res.json()).then(res => console.log(res));
 					}
 				}}
 				image={img}
