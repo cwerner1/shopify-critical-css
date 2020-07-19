@@ -1,5 +1,7 @@
 const ShopifyAdmin = require('../lib/shopify');
 const criticalCss = require('../lib/critical-css');
+const parseHtml = require('../lib/parseHtml');
+
 
 module.exports = async (ctx, next) => {
 	console.log('access token:', ctx.session.accessToken);
@@ -12,7 +14,12 @@ module.exports = async (ctx, next) => {
 			url: `https://${ctx.session.shop}`
 		}
 		await shopifyAdmin.init();
-		await shopifyAdmin.getThemeLiquid();
+		const themeLiquid = await shopifyAdmin.getThemeLiquid();
+		const updatedThemeLiquid = parseHtml(themeLiquid.value);
+		console.log(updatedThemeLiquid);
+
+		// TODO: Update theme.liquid with new value on shopify store
+
 	
 		const generatedCss = await criticalCss.generateForStore(shop, (criticalCss) => {
 			shopifyAdmin.writeAsset('snippets/critical-css.liquid', criticalCss)
