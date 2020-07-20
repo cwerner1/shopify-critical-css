@@ -14,7 +14,14 @@ module.exports = async (ctx, next) => {
 		const shop = {
 			url: `https://${ctx.session.shop}`
 		}
-		await shopifyAdmin.init();
+		await shopifyAdmin.init();	
+		await criticalCss.generateForStore(shop, (criticalCss) => {
+			shopifyAdmin.writeAsset({
+				name: 'snippets/critical-css.liquid', 
+				value: criticalCss
+			});
+		});
+
 		const themeLiquid = await shopifyAdmin.getThemeLiquid();
 		const updatedThemeLiquid = parseHtml(themeLiquid.value);
 		// Diff and Only write if different
@@ -22,13 +29,6 @@ module.exports = async (ctx, next) => {
 		shopifyAdmin.writeAsset({
 			name: 'layout/theme.liquid',
 			value: updatedThemeLiquid
-		});
-	
-		await criticalCss.generateForStore(shop, (criticalCss) => {
-			shopifyAdmin.writeAsset({
-				name: 'snippets/critical-css.liquid', 
-				value: criticalCss
-			});
 		});
 
 		ctx.body = JSON.stringify({
