@@ -22,7 +22,6 @@ app.prepare().then(() => {
 
 	server.use(session({ secure: true, sameSite: 'none' }, server));
 	server.keys = [SHOPIFY_API_SECRET_KEY];
-	console.log({ SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY })
 	server.use(createShopifyAuth({
 		apiKey: SHOPIFY_API_KEY,
 		secret: SHOPIFY_API_SECRET_KEY,
@@ -36,7 +35,6 @@ app.prepare().then(() => {
 	}))
 
 	server.use(verifyRequest());
-	
 	router.get('/generate', generate);
 
 	server.use(router.routes());
