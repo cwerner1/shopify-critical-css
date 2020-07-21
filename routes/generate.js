@@ -9,36 +9,36 @@ module.exports = async (ctx, next) => {
 	try {
 		const shopifyAdmin = new ShopifyAdmin({
 			accessToken: ctx.session.accessToken,
-			shop: ctx.session.shop
+			shop: ctx.session.shop,
+			version: '2020-04'
 		})
-		const shop = {
-			url: `https://${ctx.session.shop}`
-		}
-		await shopifyAdmin.init();	
-		await criticalCss.generateForStore(shop, (criticalCss) => {
+		console.log('> ShopifyAdmin initalised')
+		await shopifyAdmin.init();
+		await criticalCss.generateForShop(shopifyAdmin, (criticalCss) => {
 			shopifyAdmin.writeAsset({
 				name: 'snippets/critical-css.liquid', 
 				value: criticalCss
 			});
 		});
 
+		console.log('> Generated Critical CSS and uploaded to snippets/critical-css.liquid');
 		const themeLiquid = await shopifyAdmin.getThemeLiquid();
 		const updatedThemeLiquid = parseHtml(themeLiquid.value);
 		// Diff and Only write if different
-		console.log("Writing updated theme.liquid");
-		shopifyAdmin.writeAsset({
+		await shopifyAdmin.writeAsset({
 			name: 'layout/theme.liquid',
 			value: updatedThemeLiquid
 		});
+		console.log("> Updated theme.liquid");
+		console.log("> Success!")
 
 		ctx.body = JSON.stringify({
 			error: false,
-			themeId: shopifyAdmin.themeId,
-			assets: shopifyAdmin.assets,
-			criticalCss: generatedCss
+			success: true
 	 	});
 	}
 	catch(e) {
+		console.log(e);
 		ctx.body = JSON.stringify({
 			isError: true,
 			message: 'Could not generate critical css',
