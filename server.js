@@ -7,22 +7,26 @@ const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
 const generate = require('./routes/generate');
+const socket = require('socket.io');
+const eventEmitter = require('./lib/events')
 
 dotenv.config();
 
 const port = parseInt(process.env.PORT, 10) || 3000;
 const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
-const handle = app.getRequestHandler();
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
-app.prepare().then(() => {
-	const server = new Koa();
+nextApp.prepare().then(() => {
+	const koaServer = new Koa();
 	const router = new Router();
+	const server = require('http').createServer(koaServer.callback());
+	const io = socket(server);
 
-	server.use(session({ secure: true, sameSite: 'none' }, server));
-	server.keys = [SHOPIFY_API_SECRET_KEY];
-	server.use(createShopifyAuth({
+	koaServer.use(session({ secure: true, sameSite: 'none' }, koaServer));
+	koaServer.keys = [SHOPIFY_API_SECRET_KEY];
+	koaServer.use(createShopifyAuth({
 		apiKey: SHOPIFY_API_KEY,
 		secret: SHOPIFY_API_SECRET_KEY,
 		scopes: [
@@ -40,18 +44,30 @@ app.prepare().then(() => {
 		}
 	}))
 
-	server.use(verifyRequest());
+	koaServer.use(verifyRequest());
 	router.get('/generate', generate);
 
-	server.use(router.routes());
-	server.use(router.allowedMethods());
+	koaServer.use(router.routes());
+	koaServer.use(router.allowedMethods());
 	
 	
-	server.use(async(ctx) => {
+	koaServer.use(async(ctx) => {
 		await handle(ctx.req, ctx.res);
 		ctx.respond = false;
 		ctx.res.statusCode = 200;
 		return;
+	})
+
+	
+	io.on('connection', socket => {
+		// This doesn't work as multiple event listeners get added for each socket,
+		// so the response will get sent to everyone at the same time.
+		eventEmitter.on('critical-css', msg => {
+			socket.emit('critical-css', msg)
+		})
+		console.log(socket.server);
+
+		console.log('a user connected');
 	})
 
 	server.listen(port, () => {
