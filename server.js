@@ -7,8 +7,6 @@ const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
 const generate = require('./routes/generate');
-const socket = require('socket.io');
-const eventEmitter = require('./lib/events')
 
 dotenv.config();
 
@@ -19,14 +17,12 @@ const handle = nextApp.getRequestHandler();
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
 nextApp.prepare().then(() => {
-	const koaServer = new Koa();
+	const server = new Koa();
 	const router = new Router();
-	const server = require('http').createServer(koaServer.callback());
-	const io = socket(server);
 
-	koaServer.use(session({ secure: true, sameSite: 'none' }, koaServer));
-	koaServer.keys = [SHOPIFY_API_SECRET_KEY];
-	koaServer.use(createShopifyAuth({
+	server.use(session({ secure: true, sameSite: 'none' }, server));
+	server.keys = [SHOPIFY_API_SECRET_KEY];
+	server.use(createShopifyAuth({
 		apiKey: SHOPIFY_API_KEY,
 		secret: SHOPIFY_API_SECRET_KEY,
 		scopes: [
@@ -44,30 +40,18 @@ nextApp.prepare().then(() => {
 		}
 	}))
 
-	koaServer.use(verifyRequest());
+	server.use(verifyRequest());
 	router.get('/generate', generate);
 
-	koaServer.use(router.routes());
-	koaServer.use(router.allowedMethods());
+	server.use(router.routes());
+	server.use(router.allowedMethods());
 	
 	
-	koaServer.use(async(ctx) => {
+	server.use(async(ctx) => {
 		await handle(ctx.req, ctx.res);
 		ctx.respond = false;
 		ctx.res.statusCode = 200;
 		return;
-	})
-
-	
-	io.on('connection', socket => {
-		// This doesn't work as multiple event listeners get added for each socket,
-		// so the response will get sent to everyone at the same time.
-		eventEmitter.on('critical-css', msg => {
-			socket.emit('critical-css', msg)
-		})
-		console.log(socket.server);
-
-		console.log('a user connected');
 	})
 
 	server.listen(port, () => {
