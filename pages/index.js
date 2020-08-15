@@ -1,6 +1,11 @@
 import { Component } from 'react';
-import { EmptyState, Page, Layout } from '@shopify/polaris';
-const img = 'https://cdn.shopify.com/s/files/1/0757/9955/files/empty-state.svg';
+import { 
+	Button, 
+	Card, 
+	Page, 
+	Layout, 
+	TextContainer 
+} from '@shopify/polaris';
 
 class Index extends Component {
 	constructor(props) {
@@ -8,19 +13,19 @@ class Index extends Component {
 	}
 
 	render() {
-		return (<Page>
+		return (<Page fullWidth>
 			<Layout>
-				<EmptyState 
-					heading="Speed up your site with Critical CSS"
-					action={{
-						content: 'Generate Critical CSS',
-						onAction: () => {
-							fetch('/generate').then(res => res.json()).then(res => console.log(res));
-						}
-					}}
-					image={img}
-				>
-				</EmptyState>
+				<Layout.Section>
+					<Card title="Speed up your site with Critical CSS" sectioned>
+						<TextContainer>
+							<p>This will speed up your website by generating the styles needed for the initial screen. The stylesheet loads in the background and is applied when it's ready. What this means is that users don't have to wait for styles for the entire website to be downloaded before they can view the page. This speeds up the first view experience significantly, improving user experience and potentially conversions</p>
+							<p><Button primary onClick={() => {
+								console.log("generating critical css");
+								fetch('/generate').then(res => res.json()).then(res => console.log(res));
+							}}>Generate</Button></p>
+						</TextContainer>
+					</Card>
+				</Layout.Section> 
 			</Layout>
 		</Page>)
 	}
