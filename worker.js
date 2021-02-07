@@ -19,11 +19,11 @@ function start() {
 	let workQueue = new Queue('critical-css', REDIS_URL);
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
-		console.log(job);
-		job.progress = 0;
+		console.log(job.data);
+		job.progress(0);
 		const shopifyAdmin = new ShopifyAdmin({
-			accessToken: accessToken,
-			shop: shop,
+			accessToken: job.data.accessToken,
+			shop: job.data.shop,
 			version: '2020-04'
 		})
 		await shopifyAdmin.init();

@@ -11,6 +11,7 @@ async function checkJob(id) {
 	const res = await fetch(`/job/${id}`);
 	const result = await res.json();
 	console.log(result);
+	return result;
 }
 
 class Index extends Component {
@@ -28,9 +29,13 @@ class Index extends Component {
 							<p><Button primary onClick={async () => {
 								const res = await fetch('/generate', { method: 'POST' })
 								const job = await res.json();
-								job.id && setInterval(() => {
-									checkJob(job.id);
-								}, 500);
+								const intervalId = setInterval(async () => {
+									const result = await checkJob(job.id);
+									if(result.progress == 100) {
+										console.log('Job done!');
+										clearInterval(intervalId);
+									}
+								}, 2000);
 
 							}}>Generate</Button></p>
 						</TextContainer>

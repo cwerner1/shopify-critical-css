@@ -51,7 +51,7 @@ nextApp.prepare().then(() => {
 	server.use(verifyRequest());
 	
 	// Generate route
-	router.post('/generate', async () => {
+	router.post('/generate', async (ctx, next) => {
 		console.log('access token: ', ctx.session.accessToken)
 		console.log('shop: ', ctx.session.shop)
 		let job = await workQueue.add({
@@ -65,7 +65,8 @@ nextApp.prepare().then(() => {
 	// Get Job route
 	router.get('/job/:id', async (ctx, next) => {
 		// Allows the client to query the state of a background job
-		let id = ctx.query.id
+		let pathArr = ctx.path.split('/');
+		let id = pathArr[2];
 		let job = await workQueue.getJob(id);
 	
 		if (job === null) {
@@ -74,7 +75,7 @@ nextApp.prepare().then(() => {
 			let state = await job.getState();
 			let progress = job._progress;
 			let reason = job.failedReason;
-			res.json({ id, state, progress, reason });
+			ctx.body = JSON.stringify({ id, state, progress, reason });
 		}
 	});
 
