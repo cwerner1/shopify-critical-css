@@ -1,7 +1,7 @@
 require('isomorphic-fetch');
-const ShopifyAdmin = require('../lib/shopify');
-const criticalCss = require('../lib/critical-css');
-const parseHtml = require('../lib/parseHtml');
+const ShopifyAdmin = require('./lib/shopify');
+const criticalCss = require('./lib/critical-css');
+const parseHtml = require('./lib/parseHtml');
 const throng = require('throng');
 const Queue = require("bull");
 
@@ -14,11 +14,12 @@ let workers = process.env.WEB_CONCURRENCY || 2;
 
 let maxJobsPerWorker = 50;
 
-async function processCriticalCss(accessToken, shop) {
+function start() {
 	// Connect to the named work queue
 	let workQueue = new Queue('critical-css', REDIS_URL);
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
+		console.log(job);
 		job.progress = 0;
 		const shopifyAdmin = new ShopifyAdmin({
 			accessToken: accessToken,
@@ -54,4 +55,4 @@ async function processCriticalCss(accessToken, shop) {
 	});
 }
 
-throng({ workers, processCriticalCss });
+throng({ workers, start });
