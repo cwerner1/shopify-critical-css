@@ -1,13 +1,11 @@
 require('isomorphic-fetch');
 const dotenv = require('dotenv');
 const Koa = require('koa');
-const websockify = require('koa-websocket');
 const Router = require('koa-router');
 const next = require('next');
 const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
-const generate = require('./routes/generate');
 
 dotenv.config();
 
@@ -17,11 +15,17 @@ const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
+let Queue = require('bull');
+
+// Connect to a local redis intance locally, and the Heroku-provided URL in production
+let REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+
+// Create / Connect to a named work queue
+let workQueue = new Queue('critical-css', REDIS_URL);
+
 nextApp.prepare().then(() => {
 	const server = new Koa();
-	const sockets = websockify(server);
-	const httpRouter = new Router();
-	const socketsRouter = new Router();
+	const router = new Router();
 
 
 	server.use(session({ secure: true, sameSite: 'none' }, server));
@@ -45,21 +49,37 @@ nextApp.prepare().then(() => {
 	}))
 
 	server.use(verifyRequest());
-	httpRouter.get('/generate', generate);
-	socketsRouter.get('/', function(ctx, next) {
-		ctx.websocket.send('hey');
-		ctx.websocket.on('message', function(message) {
-			console.log(message);
-		})
-		console.log('websocket called from client')
-		next()
+	
+	// Generate route
+	router.post('/generate', async () => {
+		console.log('access token: ', ctx.session.accessToken)
+		console.log('shop: ', ctx.session.shop)
+		let job = await workQueue.add({
+			shop: ctx.session.shop,
+			accessToken: ctx.session.accessToken
+		});
+
+		ctx.body = JSON.stringify({ id: job.id });
 	});
 
-	server.use(httpRouter.routes());
-	server.use(httpRouter.allowedMethods());
-	server.ws.use(socketsRouter.routes());
-	server.ws.use(socketsRouter.allowedMethods());
+	// Get Job route
+	router.get('/job/:id', async (ctx, next) => {
+		// Allows the client to query the state of a background job
+		let id = ctx.query.id
+		let job = await workQueue.getJob(id);
 	
+		if (job === null) {
+			res.status(404).end();
+		} else {
+			let state = await job.getState();
+			let progress = job._progress;
+			let reason = job.failedReason;
+			res.json({ id, state, progress, reason });
+		}
+	});
+
+	server.use(router.routes());
+	server.use(router.allowedMethods());	
 	
 	server.use(async(ctx) => {
 		await handle(ctx.req, ctx.res);
@@ -67,6 +87,11 @@ nextApp.prepare().then(() => {
 		ctx.res.statusCode = 200;
 		return;
 	})
+
+	// You can listen to global events to get notified when jobs are processed
+	workQueue.on('global:completed', (jobId, result) => {
+	  console.log(`Job ${jobId} completed with result ${result}`);
+	});
 
 
 	server.listen(port, () => {

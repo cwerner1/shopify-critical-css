@@ -16,6 +16,7 @@
     "@shopify/koa-shopify-auth": "^3.1.65",
     "@shopify/polaris": "^4.27.0",
     "@zeit/next-css": "^1.0.1",
+    "bull": "^3.20.1",
     "critical": "^2.0.1",
     "dotenv": "^8.2.0",
     "firebase": "^7.18.0",
@@ -28,7 +29,8 @@
     "next": "^9.4.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "throng": "^5.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
