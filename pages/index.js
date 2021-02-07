@@ -7,6 +7,12 @@ import {
 	TextContainer 
 } from '@shopify/polaris';
 
+async function checkJob(id) {
+	const res = await fetch(`/job/${id}`);
+	const result = await res.json();
+	console.log(result);
+}
+
 class Index extends Component {
 	constructor(props) {
 		super(props);
@@ -20,7 +26,12 @@ class Index extends Component {
 						<TextContainer>
 							<p>This will speed up your website by generating the styles needed for the initial screen. The stylesheet loads in the background and is applied when it's ready. What this means is that users don't have to wait for styles for the entire website to be downloaded before they can view the page. This speeds up the first view experience significantly, improving user experience and potentially conversions</p>
 							<p><Button primary onClick={() => {
-								fetch('/generate', { method: 'POST' }).then(res => res.json()).then(res => console.log(res));
+								const res = await fetch('/generate', { method: 'POST' })
+								const job = await res.json();
+								job.id && setInterval(() => {
+									checkJob(job.id);
+								}, 500);
+
 							}}>Generate</Button></p>
 						</TextContainer>
 					</Card>
