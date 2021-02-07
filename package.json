@@ -2,11 +2,11 @@
   "name": "shopify-app",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js --exec",
-    "build": "next buid",
+    "build": "next build",
     "start": "NODE_ENV=production node server.js"
   },
   "keywords": [],
@@ -21,8 +21,10 @@
     "firebase": "^7.18.0",
     "isomorphic-fetch": "^2.2.1",
     "koa": "^2.13.0",
+    "koa-route": "^3.2.0",
     "koa-router": "^9.1.0",
     "koa-session": "^6.0.0",
+    "koa-websocket": "^6.0.0",
     "next": "^9.4.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -30,5 +32,8 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
+  },
+  "engines": {
+    "node": "10.x"
   }
 }

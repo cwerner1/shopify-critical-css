@@ -1,6 +1,7 @@
 require('isomorphic-fetch');
 const dotenv = require('dotenv');
 const Koa = require('koa');
+const websockify = require('koa-websocket');
 const Router = require('koa-router');
 const next = require('next');
 const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
@@ -18,7 +19,10 @@ const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
 nextApp.prepare().then(() => {
 	const server = new Koa();
-	const router = new Router();
+	const sockets = websockify(server);
+	const httpRouter = new Router();
+	const socketsRouter = new Router();
+
 
 	server.use(session({ secure: true, sameSite: 'none' }, server));
 	server.keys = [SHOPIFY_API_SECRET_KEY];
@@ -41,10 +45,20 @@ nextApp.prepare().then(() => {
 	}))
 
 	server.use(verifyRequest());
-	router.get('/generate', generate);
+	httpRouter.get('/generate', generate);
+	socketsRouter.get('/', function(ctx, next) {
+		ctx.websocket.send('hey');
+		ctx.websocket.on('message', function(message) {
+			console.log(message);
+		})
+		console.log('websocket called from client')
+		next()
+	});
 
-	server.use(router.routes());
-	server.use(router.allowedMethods());
+	server.use(httpRouter.routes());
+	server.use(httpRouter.allowedMethods());
+	server.ws.use(socketsRouter.routes());
+	server.ws.use(socketsRouter.allowedMethods());
 	
 	
 	server.use(async(ctx) => {
@@ -53,6 +67,7 @@ nextApp.prepare().then(() => {
 		ctx.res.statusCode = 200;
 		return;
 	})
+
 
 	server.listen(port, () => {
 		console.log(`> Ready on http://localhost:${port}`);

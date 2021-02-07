@@ -7,7 +7,8 @@ module.exports = async (ctx, next) => {
 	const processCritical = fork('lib/processCriticalCss.js', ['--shop', ctx.session.shop, '--accessToken', ctx.session.accessToken]);
 	processCritical.send('start');
 	processCritical.on('message', msg => {
-		// send message to client via firebase cloud messaging
+		console.log(msg);
+		ctx.websocket.send('finished');	
 	});
 
 	ctx.body = JSON.stringify({ status: 'pending'});
