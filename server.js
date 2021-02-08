@@ -51,12 +51,11 @@ nextApp.prepare().then(() => {
 	server.use(verifyRequest());
 	
 	// Turn on critical css
-	router.post('/on', async (ctx, next) => {
+	router.post('/generate', async (ctx, next) => {
 		console.log('access token: ', ctx.session.accessToken)
 		console.log('shop: ', ctx.session.shop)
 		const job = await workQueue.add({
-			type: 'critical-css',
-			state: 'on',
+			type: 'generate',
 			shop: ctx.session.shop,
 			accessToken: ctx.session.accessToken
 		});
@@ -65,13 +64,12 @@ nextApp.prepare().then(() => {
 	});
 
 	// Turn off critical css
-	router.post('/off', async (ctx, next) => {
+	router.post('/restore', async (ctx, next) => {
 		console.log('access token: ', ctx.session.accessToken)
 		console.log('shop: ', ctx.session.shop)
 
 		const job = await workQueue.add({
-			type: 'critical-css',
-			state: 'off',
+			type: 'restore',
 			shop: ctx.session.shop,
 			accessToken: ctx.session.accessToken
 		});
@@ -92,7 +90,7 @@ nextApp.prepare().then(() => {
 			let state = await job.getState();
 			let progress = job._progress;
 			let reason = job.failedReason;
-			ctx.body = JSON.stringify({ id, state, progress, reason });
+			ctx.body = JSON.stringify({ id, state, progress, reason, type: job.data.type });
 		}
 	});
 

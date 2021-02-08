@@ -34,7 +34,7 @@ async function initShopifyAdmin({ shop, accessToken}) {
  * @param {Object} job 
  * @param {Object} shopifyAdmin 
  */
-async function criticalCssOn(job, shopifyAdmin) {
+async function criticalCssGenerate(job, shopifyAdmin) {
 	await criticalCss.generateForShop(shopifyAdmin, (criticalCss) => {
 		shopifyAdmin.writeAsset({
 			name: 'snippets/critical-css.liquid',
@@ -58,7 +58,7 @@ async function criticalCssOn(job, shopifyAdmin) {
  * @param {Object} job 
  * @param {Object} shopifyAdmin 
  */
-async function criticalCssOff(job, shopifyAdmin) {
+async function criticalCssRestore(job, shopifyAdmin) {
 	await shopifyAdmin.deleteAsset('snippets/critical-css.liquid');
 	const themeLiquid = await shopifyAdmin.getThemeLiquid();
 	const updatedThemeLiquid = reverseThemeLiquid(themeLiquid.value);
@@ -82,13 +82,11 @@ function start() {
 		});
 		job.progress(10);
 
-		if(job.data.type === 'critical-css') {
-			if(job.data.state === 'on') {
-				await criticalCssOn(job, shopifyAdmin);
-			}
-			else {
-				await criticalCssOff(job, shopifyAdmin);
-			}
+		if(job.data.type === 'generate') {
+			await criticalCssGenerate(job, shopifyAdmin);
+		}
+		if(job.data.type === 'restore') {
+			await criticalCssRestore(job, shopifyAdmin);
 		}
 		job.progress(100);
 		console.log("> Success!")
