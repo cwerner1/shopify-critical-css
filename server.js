@@ -50,15 +50,32 @@ nextApp.prepare().then(() => {
 
 	server.use(verifyRequest());
 	
-	// Generate route
-	router.post('/generate', async (ctx, next) => {
+	// Turn on critical css
+	router.post('/on', async (ctx, next) => {
 		console.log('access token: ', ctx.session.accessToken)
 		console.log('shop: ', ctx.session.shop)
-		let job = await workQueue.add({
+		const job = await workQueue.add({
+			type: 'critical-css',
+			state: 'on',
 			shop: ctx.session.shop,
 			accessToken: ctx.session.accessToken
 		});
 
+		ctx.body = JSON.stringify({ id: job.id });
+	});
+
+	// Turn off critical css
+	router.post('/off', async (ctx, next) => {
+		console.log('access token: ', ctx.session.accessToken)
+		console.log('shop: ', ctx.session.shop)
+
+		const job = await workQueue.add({
+			type: 'critical-css',
+			state: 'off',
+			shop: ctx.session.shop,
+			accessToken: ctx.session.accessToken
+		});
+		
 		ctx.body = JSON.stringify({ id: job.id });
 	});
 
@@ -70,7 +87,7 @@ nextApp.prepare().then(() => {
 		let job = await workQueue.getJob(id);
 	
 		if (job === null) {
-			res.status(404).end();
+			ctx.response.status = 404;
 		} else {
 			let state = await job.getState();
 			let progress = job._progress;

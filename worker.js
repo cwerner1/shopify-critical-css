@@ -1,7 +1,8 @@
 require('isomorphic-fetch');
 const ShopifyAdmin = require('./lib/shopify');
 const criticalCss = require('./lib/critical-css');
-const parseHtml = require('./lib/parseHtml');
+const parseThemeLiquid = require('./lib/parseThemeLiquid');
+const reverseThemeLiquid = require('./lib/reverseThemeLiquid');
 const throng = require('throng');
 const Queue = require("bull");
 
@@ -14,44 +15,84 @@ let workers = process.env.WEB_CONCURRENCY || 2;
 
 let maxJobsPerWorker = 50;
 
+/**
+ * Initialise ShopifyAdmin instance
+ * @param {Object} options 
+ */
+async function initShopifyAdmin({ shop, accessToken}) {
+	const shopifyAdmin = new ShopifyAdmin({
+		accessToken: accessToken,
+		shop: shop,
+		version: '2020-04'
+	})
+	await shopifyAdmin.init();
+	return shopifyAdmin;
+}
+
+/**
+ * Turn ON critical css for the shop
+ * @param {Object} job 
+ * @param {Object} shopifyAdmin 
+ */
+async function criticalCssOn(job, shopifyAdmin) {
+	await criticalCss.generateForShop(shopifyAdmin, (criticalCss) => {
+		shopifyAdmin.writeAsset({
+			name: 'snippets/critical-css.liquid',
+			value: criticalCss
+		});
+	});
+	job.progress(80);
+	console.log('> Generated Critical CSS and uploaded to snippets/critical-css.liquid');
+	
+	const themeLiquid = await shopifyAdmin.getThemeLiquid();
+	const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
+	// Diff and Only write if different
+	await shopifyAdmin.writeAsset({
+		name: 'layout/theme.liquid',
+		value: updatedThemeLiquid
+	});
+}
+
+/**
+ * Turn OFF critical css for the shop
+ * @param {Object} job 
+ * @param {Object} shopifyAdmin 
+ */
+async function criticalCssOff(job, shopifyAdmin) {
+	await shopifyAdmin.deleteAsset('snippets/critical-css.liquid');
+	const themeLiquid = await shopifyAdmin.getThemeLiquid();
+	const updatedThemeLiquid = reverseThemeLiquid(themeLiquid.value);
+	// Diff and Only write if different
+	await shopifyAdmin.writeAsset({
+		name: 'layout/theme.liquid',
+		value: updatedThemeLiquid
+	});
+}
+
+
 function start() {
 	// Connect to the named work queue
 	let workQueue = new Queue('critical-css', REDIS_URL);
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
-		console.log(job.data);
 		job.progress(0);
-		const shopifyAdmin = new ShopifyAdmin({
-			accessToken: job.data.accessToken,
+		const shopifyAdmin = await initShopifyAdmin({
 			shop: job.data.shop,
-			version: '2020-04'
-		})
-		await shopifyAdmin.init();
-		
+			accessToken: job.data.accessToken
+		});
 		job.progress(10);
-		console.log('> ShopifyAdmin initalised')
-		
-		await criticalCss.generateForShop(shopifyAdmin, (criticalCss) => {
-			shopifyAdmin.writeAsset({
-				name: 'snippets/critical-css.liquid',
-				value: criticalCss
-			});
-		});
-		job.progress(80);
-		console.log('> Generated Critical CSS and uploaded to snippets/critical-css.liquid');
-		
-		const themeLiquid = await shopifyAdmin.getThemeLiquid();
-		const updatedThemeLiquid = parseHtml(themeLiquid.value);
-		// Diff and Only write if different
-		await shopifyAdmin.writeAsset({
-			name: 'layout/theme.liquid',
-			value: updatedThemeLiquid
-		});
+
+		if(job.data.type === 'critical-css') {
+			if(job.data.state === 'on') {
+				await criticalCssOn(job, shopifyAdmin);
+			}
+			else {
+				await criticalCssOff(job, shopifyAdmin);
+			}
+		}
 		job.progress(100);
-		console.log("> Updated theme.liquid");
 		console.log("> Success!")
-		process.send({ status: 'success' });
-		process.exit(0);
+		return { success: true };
 	});
 }
 

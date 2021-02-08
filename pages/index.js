@@ -27,7 +27,7 @@ class Index extends Component {
 						<TextContainer>
 							<p>This will speed up your website by generating the styles needed for the initial screen. The stylesheet loads in the background and is applied when it's ready. What this means is that users don't have to wait for styles for the entire website to be downloaded before they can view the page. This speeds up the first view experience significantly, improving user experience and potentially conversions</p>
 							<p><Button primary onClick={async () => {
-								const res = await fetch('/generate', { method: 'POST' })
+								const res = await fetch('/on', { method: 'POST' })
 								const job = await res.json();
 								const intervalId = setInterval(async () => {
 									const result = await checkJob(job.id);
@@ -37,7 +37,13 @@ class Index extends Component {
 									}
 								}, 2000);
 
-							}}>Generate</Button></p>
+							}}>ON</Button></p>
+
+							<p><Button secondary onClick={async () => {
+								const res = await fetch('/off', { method: 'POST' })
+								const job = await res.json();
+								console.log(`off returned job id: ${job.id}`);
+							}}>OFF</Button></p>
 						</TextContainer>
 					</Card>
 				</Layout.Section> 
