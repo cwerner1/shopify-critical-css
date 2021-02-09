@@ -28,7 +28,7 @@ class Index extends Component {
 		const intervalId = setInterval(async () => {
 			const result = await this.checkJob(jobId);
 			this.setState({ action: result.type, status: result.state })
-			if(result.state !== 'active') {
+			if(result.state === 'completed' || result.state === 'failed') {
 				clearInterval(intervalId);
 				clearTimeout(timeoutId);
 			}
