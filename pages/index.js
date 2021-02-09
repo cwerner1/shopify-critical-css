@@ -6,7 +6,8 @@ import {
 	Banner,
 	List,
 	TextStyle,
-	TextContainer
+	TextContainer,
+	Heading
 } from '@shopify/polaris';
 
 
@@ -67,7 +68,7 @@ class Index extends Component {
 				return (<Banner status="success" title="Successfully generated critical css!">Your site will now load faster for all users</Banner>);
 			}
 			if(this.state.status === 'failed') {
-				return (<Banner status="critical" title="Failed to generate critical css">Something went wrong trying to generate the critical css fo your site. Please contact <a href="mailto:alexflorisca@gmail.com">support</a></Banner>);
+				return (<Banner status="critical" title="Failed to generate critical css">Something went wrong trying to generate the critical css fo your site. Please try again. If this keeps happening, please contact <a href="mailto:alexflorisca@gmail.com">support</a></Banner>);
 			}
 		}
 	}
@@ -99,10 +100,19 @@ class Index extends Component {
 		const generateActive = action === 'generate' && status === 'active';
 		return (
 			<Page fullWidth title="Critical CSS">
+				<Card title="What is Critical CSS?" sectioned>
+					<TextContainer>
+						<p>Critical CSS refers to the styles needed to display the initial screen of your website, before the user scrolls down or navigates away from the page. We generate these styles and download them as soon as possible so that users can start interacting with your website faster. The rest of the styles are loaded in the background and are applied when they're ready. This means the website will appear significantly faster to your users.</p>
+						<Heading>Lighthouse Performance</Heading>
+						<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
+						<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
+						<p><img src="https://shopify-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
+					</TextContainer>
+				</Card>
 				<Card title="Generate critical CSS" sectioned>
 					<TextContainer>
 						{this.showGenerateBanner()}
-						<p><TextStyle variation="subdued">Speed up your website by generating the styles needed for the initial screen. The stylesheet loads in the background and is applied when it's ready. What this means is that users don't have to wait for styles for the entire website to be downloaded before they can view the page. This speeds up the first view experience significantly, improving user experience and conversions</TextStyle></p>
+						<p><TextStyle variation="subdued">Generate the styles needed to display the initial screen of your website. You'll need to do this everytime you make a change to the styling of your website, otherwise they will be out of sync</TextStyle></p>
 						<p>
 							<Button primary onClick={this.handleCriticalCssOn} disabled={generateActive}>
 								{generateActive ? 'Generating...this may take a few minutes' : 'Generate'}

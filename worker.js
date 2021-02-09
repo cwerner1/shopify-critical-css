@@ -76,21 +76,25 @@ function start() {
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
 		job.progress(0);
-		const shopifyAdmin = await initShopifyAdmin({
-			shop: job.data.shop,
-			accessToken: job.data.accessToken
-		});
-		job.progress(10);
-
-		if(job.data.type === 'generate') {
-			await criticalCssGenerate(job, shopifyAdmin);
+		try {
+			const shopifyAdmin = await initShopifyAdmin({
+				shop: job.data.shop,
+				accessToken: job.data.accessToken
+			});
+			job.progress(10);
+	
+			if(job.data.type === 'generate') {
+				await criticalCssGenerate(job, shopifyAdmin);
+			}
+			if(job.data.type === 'restore') {
+				await criticalCssRestore(job, shopifyAdmin);
+			}
+			job.progress(100);
+			console.log("> Success!")
+			return { success: true };
+		} catch (e) {
+			throw new Error(e);
 		}
-		if(job.data.type === 'restore') {
-			await criticalCssRestore(job, shopifyAdmin);
-		}
-		job.progress(100);
-		console.log("> Success!")
-		return { success: true };
 	});
 }
 
