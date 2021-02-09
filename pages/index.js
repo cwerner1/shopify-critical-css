@@ -79,12 +79,13 @@ class Index extends Component {
 			}
 			if(this.state.status === 'failed') {
 				return (<Banner status="warning" title="Couldn't remove critical CSS">
-					<p>There was an error while trying to remove the critical css and restore your theme files. You can do this manually if you wish, it only takes a second</p>
+					<p>There was an error while trying to remove the critical css and restore your theme files. You can do this manually if you wish, following these instructions:</p>
 					<List>
 						<List.Item>Click on <strong>Online Store</strong>, then on <strong>Actions</strong> &gt; <strong>Edit Code</strong> next to your live theme </List.Item>
 						<List.Item>In the right hand bar, find <strong>snippets/critical-css.liquid</strong> and delete it</List.Item>
 						<List.Item>Find <strong>theme.liquid</strong> and click on it to open.</List.Item>
-						<List.Item>Find the line of code that looks like this: <code>&#x7B;&#x25;&#x20;&#x69;&#x6E;&#x63;&#x6C;&#x75;&#x64;&#x65;&#x20;&#x27;&#x63;&#x72;&#x69;&#x74;&#x69;&#x63;&#x61;&#x6C;&#x2D;&#x63;&#x73;&#x73;&#x2E;&#x6C;&#x69;&#x71;&#x75;&#x69;&#x64;&#x27;&#x20;&#x25;&#x7D;</code> and delete it</List.Item>
+						<List.Item>Find the line of code that looks like this: <code><strong>&#x7B;&#x25;&#x20;&#x69;&#x6E;&#x63;&#x6C;&#x75;&#x64;&#x65;&#x20;&#x27;&#x63;&#x72;&#x69;&#x74;&#x69;&#x63;&#x61;&#x6C;&#x2D;&#x63;&#x73;&#x73;&#x2E;&#x6C;&#x69;&#x71;&#x75;&#x69;&#x64;&#x27;&#x20;&#x25;&#x7D;</strong></code> and delete it</List.Item>
+						<List.Item>Find all the lines starting with <code><strong>&#x3C;&#x6C;&#x69;&#x6E;&#x6B;&#x20;&#x72;&#x65;&#x6C;&#x3D;&#x22;&#x73;&#x74;&#x79;&#x6C;&#x65;&#x73;&#x68;&#x65;&#x65;&#x74;&#x22;</strong></code>. Remove <code><strong>&#x61;&#x73;&#x3D;&#x22;&#x73;&#x74;&#x79;&#x6C;&#x65;&#x22;</strong></code> and <code><strong>&#x6F;&#x6E;&#x6C;&#x6F;&#x61;&#x64;&#x3D;&#x22;&#x74;&#x68;&#x69;&#x73;&#x2E;&#x6F;&#x6E;&#x6C;&#x6F;&#x61;&#x64;&#x3D;&#x6E;&#x75;&#x6C;&#x6C;&#x3B;&#x74;&#x68;&#x69;&#x73;&#x2E;&#x6D;&#x65;&#x64;&#x69;&#x61;&#x3D;&#x27;&#x61;&#x6C;&#x6C;&#x27;&#x22;</strong></code>. Change <code><strong>&#x6D;&#x65;&#x64;&#x69;&#x61;&#x3D;&#x22;&#x6E;&#x6F;&#x6E;&#x65;&#x22;</strong></code> to <code><strong>&#x6D;&#x65;&#x64;&#x69;&#x61;&#x3D;&#x22;&#x61;&#x6C;&#x6C;&#x22;</strong></code></List.Item>
 					</List>
 					</Banner>);
 			}
