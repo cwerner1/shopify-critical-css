@@ -93,7 +93,8 @@ function start() {
 			console.log("> Success!")
 			return { success: true };
 		} catch (e) {
-			throw new Error(e);
+			console.log(e);
+			throw e;
 		}
 	});
 }
