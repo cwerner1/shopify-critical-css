@@ -36,6 +36,7 @@ class Index extends Component {
 
 		const timeoutId = setTimeout(() => {
 			clearInterval(intervalId);
+			this.setState({ action: 'failed' });
 		}, timeout)
 	}
 
