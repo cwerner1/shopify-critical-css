@@ -1,10 +1,13 @@
 require('isomorphic-fetch');
+const dotenv = require('dotenv');
 const ShopifyAdmin = require('./lib/shopify');
 const criticalCss = require('./lib/critical-css');
 const parseThemeLiquid = require('./lib/parseThemeLiquid');
 const reverseThemeLiquid = require('./lib/reverseThemeLiquid');
 const throng = require('throng');
 const Queue = require("bull");
+
+dotenv.config();
 
 // Connect to a local redis instance locally, and the Heroku-provided URL in production
 let REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";

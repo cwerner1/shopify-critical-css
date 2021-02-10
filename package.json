@@ -30,7 +30,8 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "socket.io": "^2.3.0",
-    "throng": "^5.0.0"
+    "throng": "^5.0.0",
+    "tiny-async-pool": "^1.2.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
