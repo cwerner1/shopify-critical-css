@@ -159,7 +159,7 @@ class Index extends Component {
 						<Heading>Lighthouse Performance</Heading>
 						<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
 						<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
-						<p><img src="https://shopify-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
+						<p><img src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
 					</TextContainer>
 				</Card>
 		</Page>)
