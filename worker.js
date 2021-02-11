@@ -35,14 +35,13 @@ async function initShopifyAdmin({ shop, accessToken}) {
  * @param {Object} shopifyAdmin 
  */
 async function criticalCssGenerate(job, shopifyAdmin) {
-	await criticalCss.generateForShop(shopifyAdmin, (criticalCss) => {
+	await criticalCss.generateForShop(shopifyAdmin, job, (criticalCss) => {
 		shopifyAdmin.writeAsset({
 			name: 'snippets/critical-css.liquid',
 			value: criticalCss
 		});
 	});
 	job.progress(80);
-	console.log('> Generated Critical CSS and uploaded to snippets/critical-css.liquid');
 	
 	const themeLiquid = await shopifyAdmin.getThemeLiquid();
 	const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
@@ -51,6 +50,7 @@ async function criticalCssGenerate(job, shopifyAdmin) {
 		name: 'layout/theme.liquid',
 		value: updatedThemeLiquid
 	});
+	job.progress(90);
 }
 
 /**

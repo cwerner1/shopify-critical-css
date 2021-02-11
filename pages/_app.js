@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { AppProvider } from '@shopify/polaris';
 import '@shopify/polaris/styles.css';
 import translations from '@shopify/polaris/locales/en.json';
+import '../styles/app.css';
 
 class CriticalCSS extends App {
 	render() {

@@ -42,7 +42,6 @@ nextApp.prepare().then(() => {
 		],
 		afterAuth(ctx) {
 			const { shop, accessToken } = ctx.session;
-			console.log(`Authenticated for ${shop} with token: ${accessToken}`)
 			ctx.token = accessToken;
 			ctx.redirect(`https://${shop}/admin/apps/critical-css`)
 		}
@@ -52,8 +51,6 @@ nextApp.prepare().then(() => {
 	
 	// Turn on critical css
 	router.post('/generate', async (ctx, next) => {
-		console.log('access token: ', ctx.session.accessToken)
-		console.log('shop: ', ctx.session.shop)
 		const job = await workQueue.add({
 			type: 'generate',
 			shop: ctx.session.shop,
@@ -65,9 +62,6 @@ nextApp.prepare().then(() => {
 
 	// Turn off critical css
 	router.post('/restore', async (ctx, next) => {
-		console.log('access token: ', ctx.session.accessToken)
-		console.log('shop: ', ctx.session.shop)
-
 		const job = await workQueue.add({
 			type: 'restore',
 			shop: ctx.session.shop,
