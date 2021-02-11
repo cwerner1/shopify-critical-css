@@ -90,7 +90,6 @@ function start() {
 				await criticalCssRestore(job, shopifyAdmin);
 			}
 			job.progress(100);
-			console.log("> Success!")
 			return { success: true };
 		} catch (e) {
 			console.log(e);

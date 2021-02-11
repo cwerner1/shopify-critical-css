@@ -50,7 +50,6 @@ class Index extends Component {
 	async checkJob(id) {
 		const res = await fetch(`/job/${id}`);
 		const result = await res.json();
-		console.log(result);
 		return result;
 	}
 
@@ -58,7 +57,6 @@ class Index extends Component {
 		this.setState({ action: 'restore', status: 'active', progress: 0 });
 		const res = await fetch('/restore', { method: 'POST' });
 		const job = await res.json();
-		console.log('Called /restore with response, ', job);
 		this.pollJob(job.id, 1000, 5000);
 	}
 
@@ -66,7 +64,6 @@ class Index extends Component {
 		this.setState({ action: 'generate', status: 'active', progress: 0 });
 		const res = await fetch('/generate', { method: 'POST' })
 		const job = await res.json();
-		console.log('Called /generate with response, ', job);
 		this.pollJob(job.id, 2000, 20000);
 	}
 

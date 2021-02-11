@@ -41,7 +41,6 @@ const pages = [
 ];
 
 function generateCriticalCss(page) {
-	console.log(`Generating critical css for ${page.type}`);
 	return critical.generate({
 		src: page.url,
 		dimensions: [{
@@ -80,12 +79,10 @@ function updateCriticalCss(pages) {
 	})
 
 	Promise.all(promises).then(data => {
-		console.log('Critical css generated for all pages');
 		data.forEach(page => {
 			const regex = new RegExp(`<style id="critical-css-${page.pageType}">(.*?)<\/style>`);
 			criticalCss = criticalCss.replace(regex, `<style id="critical-css-${page.pageType}">${page.css}</style>`);
 		})
-		console.log('Writing to critical-css.liquid');
 		fs.writeFileSync('snippets/critical-css.liquid', criticalCss, 'utf-8');
 	})
 	.catch(e => {

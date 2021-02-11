@@ -6,6 +6,7 @@ const next = require('next');
 const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
+const Queue = require('bull');
 
 dotenv.config();
 
@@ -14,8 +15,6 @@ const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
-
-let Queue = require('bull');
 
 // Connect to a local redis intance locally, and the Heroku-provided URL in production
 let REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
