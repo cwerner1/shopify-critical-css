@@ -50,23 +50,25 @@ nextApp.prepare().then(() => {
 	
 	// Turn on critical css
 	router.post('/generate', async (ctx, next) => {
+		console.log(`/generate request from ${ctx.session.shop}`);
 		const job = await workQueue.add({
 			type: 'generate',
 			shop: ctx.session.shop,
 			accessToken: ctx.session.accessToken
 		});
-
+		console.log(`created job ${job.id}`);
 		ctx.body = JSON.stringify({ id: job.id });
 	});
 
 	// Turn off critical css
 	router.post('/restore', async (ctx, next) => {
+		console.log(`/restore request from ${ctx.session.shop}`);
 		const job = await workQueue.add({
 			type: 'restore',
 			shop: ctx.session.shop,
 			accessToken: ctx.session.accessToken
 		});
-		
+		console.log(`created job ${job.id}`);
 		ctx.body = JSON.stringify({ id: job.id });
 	});
 

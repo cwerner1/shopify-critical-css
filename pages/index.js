@@ -80,7 +80,7 @@ class Index extends Component {
 					<div className="banner">
 						<Banner status="info" title="Generating critical css">
 							<p>This could take a few minutes, please be patient...</p>
-							<p><ProgressBar progress={this.state.progress} size="small" /></p>
+							<ProgressBar progress={this.state.progress} size="small" />
 						</Banner>
 					</div>);
 			}
@@ -109,7 +109,7 @@ class Index extends Component {
 					<div className="banner">
 						<Banner status="info" title="Restoring critical css">
 							<p></p>
-							<p><ProgressBar progress={this.state.progress} size="small" /></p>
+							<ProgressBar progress={this.state.progress} size="small" />
 						</Banner>
 					</div>);
 			}
@@ -132,7 +132,7 @@ class Index extends Component {
 								<p><TextStyle variation="subdued">Generate the styles needed to display the initial screen of your website. You'll need to do this everytime you make a change to the styling of your website, otherwise they will be out of sync</TextStyle></p>
 								<p>
 									<Button primary onClick={this.handleCriticalCssOn} disabled={generateActive}>
-										{generateActive ? 'Generating...this may take a few minutes' : 'Generate'}
+										{generateActive ? 'Generating...' : 'Generate'}
 									</Button>
 								</p>
 							</TextContainer>
