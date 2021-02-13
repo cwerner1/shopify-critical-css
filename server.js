@@ -29,18 +29,18 @@ nextApp.prepare().then(() => {
 	gdprRouter.post('/customers/redact', (ctx, next) => {
 		// No customeer or shop data is stored, so we only log the request
 		console.log('new /customers/redact request with data', ctx.request.body);
-		ctx.body = "Received from /customers/redact"
+		ctx.body = "Request received successfully"
 	});
 
 	gdprRouter.post('/shop/redact', (ctx, next) => {
 		// No customeer or shop data is stored, so we only log the request
 		console.log('new /shop/redact request with data', ctx.request.body);
-		ctx.body = "Received"
+		ctx.body = "Request received successfully"
 	});
 	gdprRouter.post('/customers/data-request', (ctx, next) => {
 		// No customeer or shop data is stored, so we only log the request
 		console.log('new /customers/data-request request with data', ctx.request.body);
-		ctx.body = "Received"
+		ctx.body = "Request received successfully"
 	});
 
 	server.use(gdprRouter.routes());
