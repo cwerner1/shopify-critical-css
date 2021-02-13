@@ -24,9 +24,27 @@ let workQueue = new Queue('critical-css', REDIS_URL);
 
 nextApp.prepare().then(() => {
 	const server = new Koa();
-	const router = new Router();
+	const gdprRouter = new Router();
 
+	gdprRouter.post('/customers/redact', (ctx, next) => {
+		// No customeer or shop data is stored, so we only log the request
+		console.log('new /customers/redact request with data', ctx.request.body);
+		ctx.body = "Received from /customers/redact"
+	});
 
+	gdprRouter.post('/shop/redact', (ctx, next) => {
+		// No customeer or shop data is stored, so we only log the request
+		console.log('new /shop/redact request with data', ctx.request.body);
+		ctx.body = "Received"
+	});
+	gdprRouter.post('/customers/data-request', (ctx, next) => {
+		// No customeer or shop data is stored, so we only log the request
+		console.log('new /customers/data-request request with data', ctx.request.body);
+		ctx.body = "Received"
+	});
+
+	server.use(gdprRouter.routes());
+	
 	server.use(session({ secure: true, sameSite: 'none' }, server));
 	server.keys = [SHOPIFY_API_SECRET_KEY];
 	server.use(createShopifyAuth({
@@ -48,6 +66,8 @@ nextApp.prepare().then(() => {
 
 	server.use(verifyRequest());
 	
+	const router = new Router();
+
 	// Turn on critical css
 	router.post('/generate', async (ctx, next) => {
 		console.log(`/generate request from ${ctx.session.shop}`);
