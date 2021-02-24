@@ -155,7 +155,7 @@ class Index extends Component {
 				<br />
 				<Card title="Pricing" sectioned>
 					<TextContainer>
-						<p>There is a one-off $10 charge for this app as it provides one off functionality. You can run critical-css once and forget about it, unless you make frequent changes to your website design</p>
+						<p>There is a one-off $10 charge for this app. You can run critical-css once and forget about it, unless you make frequent changes to your website design</p>
 					</TextContainer>
 				</Card>
 				<Card title="What is Critical CSS?" sectioned>
