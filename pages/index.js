@@ -153,13 +153,18 @@ class Index extends Component {
 				</Layout>
 				<br />
 				<br />
+				<Card title="Pricing" sectioned>
+					<TextContainer>
+						<p>There is a one-off $10 charge for this app as it provides one off functionality. You can run critical-css once and forget about it, unless you make frequent changes to your website design</p>
+					</TextContainer>
+				</Card>
 				<Card title="What is Critical CSS?" sectioned>
 					<TextContainer>
 						<p>Critical CSS refers to the styles needed to display the initial screen of your website, before the user scrolls down or navigates away from the page. We generate these styles and download them as soon as possible so that users can start interacting with your website faster. The rest of the styles are loaded in the background and are applied when they're ready. This means the website will appear significantly faster to your users.</p>
 						<Heading>Lighthouse Performance</Heading>
 						<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
 						<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
-						<p><img src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
+						<p><img class="lighthouse" src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
 					</TextContainer>
 				</Card>
 		</Page>)
