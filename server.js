@@ -7,6 +7,7 @@ const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
 const Queue = require('bull');
+const getSubscriptionUrl = require('./lib/getSubscriptionUrl');
 
 dotenv.config();
 
@@ -57,10 +58,12 @@ nextApp.prepare().then(() => {
 			'read_content',
 			'read_product_listings'
 		],
-		afterAuth(ctx) {
+		async afterAuth(ctx) {
 			const { shop, accessToken } = ctx.session;
 			ctx.token = accessToken;
-			ctx.redirect(`https://${shop}/admin/apps/critical-css`)
+			const returnUrl = `https://${shop}/admin/apps/critical-css`;
+			const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
+			ctx.redirect(subscriptionUrl);
 		}
 	}))
 
