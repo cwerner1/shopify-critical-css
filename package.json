@@ -13,8 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@shopify/koa-shopify-auth": "^3.1.65",
+    "@shopify/app-bridge": "^1.29.0",
+    "@shopify/app-bridge-react": "^1.29.0",
+    "@shopify/app-bridge-utils": "^1.29.0",
+    "@shopify/koa-shopify-auth": "^4.0.3",
     "@shopify/polaris": "^4.27.0",
+    "@shopify/shopify-api": "^1.2.0",
     "@zeit/next-css": "^1.0.1",
     "bull": "^3.20.1",
     "critical": "^2.0.6",
@@ -29,6 +33,7 @@
     "next": "^9.4.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "redis": "^3.0.2",
     "socket.io": "^2.3.0",
     "throng": "^5.0.0",
     "tiny-async-pool": "^1.2.0"

@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { authenticatedFetch } from '@shopify/app-bridge-utils';
 import { 
 	Button, 
 	Card, 
@@ -48,21 +49,21 @@ class Index extends Component {
 	}
 
 	async checkJob(id) {
-		const res = await fetch(`/job/${id}`);
+		const res = await authenticatedFetch(`/job/${id}`);
 		const result = await res.json();
 		return result;
 	}
 
 	async handleCriticalCssOff() {
 		this.setState({ action: 'restore', status: 'active', progress: 0 });
-		const res = await fetch('/restore', { method: 'POST' });
+		const res = await authenticatedFetch('/restore', { method: 'POST' });
 		const job = await res.json();
 		this.pollJob(job.id, 1000, 5000);
 	}
 
 	async handleCriticalCssOn() {
 		this.setState({ action: 'generate', status: 'active', progress: 0 });
-		const res = await fetch('/generate', { method: 'POST' })
+		const res = await authenticatedFetch('/generate', { method: 'POST' })
 		const job = await res.json();
 		this.pollJob(job.id, 2000, 20000);
 	}
@@ -164,7 +165,7 @@ class Index extends Component {
 						<Heading>Lighthouse Performance</Heading>
 						<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
 						<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
-						<p><img class="lighthouse" src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
+						<p><img className="lighthouse" src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
 					</TextContainer>
 				</Card>
 		</Page>)
