@@ -1,4 +1,7 @@
 import { Component } from 'react';
+import { withRouter } from 'next/router';
+import { getQueryVariable } from '../lib/utils';
+import createApp from "@shopify/app-bridge";
 import { authenticatedFetch } from '@shopify/app-bridge-utils';
 import { 
 	Button, 
@@ -26,6 +29,13 @@ class Index extends Component {
 		this.showRestoreBanner = this.showRestoreBanner.bind(this);
 		this.handleCriticalCssOff = this.handleCriticalCssOff.bind(this);
 		this.handleCriticalCssOn = this.handleCriticalCssOn.bind(this);
+
+		const shop = getQueryVariable(props.router.asPath, 'shop');
+		const app = createApp({
+			apiKey: "8c7931e855bbc74ebf8468af4b670877",
+			shopOrigin: shop
+		});
+		this.sFetch = authenticatedFetch(app);
 	}
 
 	async pollJob(jobId, interval, timeout) {
@@ -49,21 +59,21 @@ class Index extends Component {
 	}
 
 	async checkJob(id) {
-		const res = await authenticatedFetch(`/job/${id}`);
+		const res = await this.sFetch(`/job/${id}`);
 		const result = await res.json();
 		return result;
 	}
 
 	async handleCriticalCssOff() {
 		this.setState({ action: 'restore', status: 'active', progress: 0 });
-		const res = await authenticatedFetch('/restore', { method: 'POST' });
+		const res = await this.sFetch('/restore');
 		const job = await res.json();
 		this.pollJob(job.id, 1000, 5000);
 	}
 
 	async handleCriticalCssOn() {
 		this.setState({ action: 'generate', status: 'active', progress: 0 });
-		const res = await authenticatedFetch('/generate', { method: 'POST' })
+		const res = await this.sFetch('/generate')
 		const job = await res.json();
 		this.pollJob(job.id, 2000, 20000);
 	}
@@ -172,4 +182,4 @@ class Index extends Component {
 	}
 }
 
-export default Index;
+export default withRouter(Index);

@@ -87,40 +87,41 @@ nextApp.prepare().then(() => {
         );
       }
 
-			const returnUrl = `https://${shop}/admin/apps/critical-css`;
-			const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
-			ctx.redirect(subscriptionUrl);
+			const returnUrl = `https://${shop}/admin/apps/critical-css?shop=${shop}`;
+			// const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
+			ctx.redirect(returnUrl);
 		}
 	}))
 	
 	const router = new Router();
 
 	// Turn on critical css
-	router.post('/generate', verifyRequest, async (ctx, next) => {
-		console.log(`/generate request from ${ctx.session.shop}`);
+	router.get('/generate', async (ctx) => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+		
 		const job = await workQueue.add({
 			type: 'generate',
-			shop: ctx.session.shop,
-			accessToken: ctx.session.accessToken
+			shop: session.shop,
+			accessToken: session.accessToken
 		});
 		console.log(`created job ${job.id}`);
 		ctx.body = JSON.stringify({ id: job.id });
 	});
 
 	// Turn off critical css
-	router.post('/restore', verifyRequest, async (ctx, next) => {
-		console.log(`/restore request from ${ctx.session.shop}`);
+	router.get('/restore', async (ctx) => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
 		const job = await workQueue.add({
 			type: 'restore',
-			shop: ctx.session.shop,
-			accessToken: ctx.session.accessToken
+			shop: session.shop,
+			accessToken: session.accessToken
 		});
 		console.log(`created job ${job.id}`);
 		ctx.body = JSON.stringify({ id: job.id });
 	});
 
 	// Get Job route
-	router.get('/job/:id', verifyRequest, async (ctx, next) => {
+	router.get('/job/:id', async (ctx) => {
 		// Allows the client to query the state of a background job
 		let pathArr = ctx.path.split('/');
 		let id = pathArr[2];
@@ -148,7 +149,9 @@ nextApp.prepare().then(() => {
     if (ACTIVE_SHOPIFY_SHOPS[shop] === undefined) {
       ctx.redirect(`/auth?shop=${shop}`);
     } else {
-      await handleRequest(ctx);
+			nextApp.render(ctx.req, ctx.res, '/')
+			ctx.respond = false;
+    	ctx.res.statusCode = 200;
     }
   });
 
