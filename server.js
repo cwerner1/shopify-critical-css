@@ -6,10 +6,8 @@ const next = require('next');
 const { default: shopifyAuth, verifyRequest } = require('@shopify/koa-shopify-auth');
 const { Shopify, ApiVersion } = require('@shopify/shopify-api');
 const Queue = require('bull');
-const redit = require('redis');
 const getSubscriptionUrl = require('./lib/getSubscriptionUrl');
 const RedisStore = require('./lib/redis-store');
-const { networkAction } = require('@shopify/app-bridge/actions/Error');
 
 dotenv.config();
 const port = parseInt(process.env.PORT, 10) || 3000;
