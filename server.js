@@ -6,8 +6,10 @@ const next = require('next');
 const { default: shopifyAuth, verifyRequest } = require('@shopify/koa-shopify-auth');
 const { Shopify, ApiVersion } = require('@shopify/shopify-api');
 const Queue = require('bull');
+const redit = require('redis');
 const getSubscriptionUrl = require('./lib/getSubscriptionUrl');
 const RedisStore = require('./lib/redis-store');
+const { networkAction } = require('@shopify/app-bridge/actions/Error');
 
 dotenv.config();
 const port = parseInt(process.env.PORT, 10) || 3000;
@@ -16,7 +18,7 @@ const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 
 // Create a new instance of the custom storage class
-const sessionStorage = new RedisStore();
+const store = new RedisStore();
 
 
 // initializes the library
@@ -28,9 +30,9 @@ Shopify.Context.initialize({
   API_VERSION: ApiVersion.October20,
   IS_EMBEDDED_APP: true,
   SESSION_STORAGE: new Shopify.Session.CustomSessionStorage(
-    sessionStorage.storeCallback,
-    sessionStorage.loadCallback,
-    sessionStorage.deleteCallback,
+    store.storeCallback,
+    store.loadCallback,
+    store.deleteCallback,
   ),
 });
 
@@ -70,6 +72,7 @@ nextApp.prepare().then(() => {
 	server.use(shopifyAuth({
 		async afterAuth(ctx) {
 			const { shop, accessToken } = ctx.state.shopify;
+			console.log('ACTIVE_SHOPIFY_SHOPS', ACTIVE_SHOPIFY_SHOPS)
 			ACTIVE_SHOPIFY_SHOPS[shop] = true;
 
 			// Your app should handle the APP_UNINSTALLED webhook to make sure merchants go through OAuth if they reinstall it
@@ -87,8 +90,13 @@ nextApp.prepare().then(() => {
         );
       }
 
+			// Check if a charge has been made for this shop
+			const paid = await store.getAsync(shop);
 			const returnUrl = `https://${shop}/admin/apps/critical-css?shop=${shop}`;
-			// const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
+			if(!paid) {
+				const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
+				ctx.redirect(subscriptionUrl);
+			}
 			ctx.redirect(returnUrl);
 		}
 	}))
@@ -98,7 +106,6 @@ nextApp.prepare().then(() => {
 	// Turn on critical css
 	router.get('/generate', async (ctx) => {
 		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
-		
 		const job = await workQueue.add({
 			type: 'generate',
 			shop: session.shop,
@@ -142,6 +149,33 @@ nextApp.prepare().then(() => {
     ctx.respond = false;
     ctx.res.statusCode = 200;
   };
+
+	router.get('/store-paid', async ctx => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+		const charge_id = ctx.query.charge_id;
+		if(session && charge_id) {
+			const paid = await store.setAsync(session.shop, JSON.stringify({ charge_id, timestamp: new Date() }));
+			if(paid == 'OK') {
+				ctx.body = JSON.stringify({ success: true });
+				return;
+			}
+			ctx.body = JSON.stringify({ success: false });
+		}
+	})
+
+	router.get('/paid', async ctx => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+		if(session) {
+			const paid = await store.getAsync(session.shop);
+			if(paid) {
+				ctx.body = JSON.stringify({ success: true });
+				return;
+			}
+			ctx.body = JSON.stringify({ success: false });
+			return;
+		}
+		ctx.body = JSON.stringify({error: "Could not load current session"});
+	})
 
 	router.get("/", async (ctx) => {
     const shop = ctx.query.shop;

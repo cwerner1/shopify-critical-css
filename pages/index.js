@@ -13,29 +13,36 @@ import {
 	TextStyle,
 	TextContainer,
 	ProgressBar,
-	Heading
+	Heading,
+	Frame,
+	Loading
 } from '@shopify/polaris';
 
 
 class Index extends Component {
 	constructor(props) {
 		super(props);
-		this.state = {
-			action: null,
-			status: 'not started',
-			progress: 0
-		}
 
 		this.showRestoreBanner = this.showRestoreBanner.bind(this);
+		this.showError = this.showError.bind(this);
+		this.showPaidBanner = this.showPaidBanner.bind(this);
+		this.showMainScreen = this.showMainScreen.bind(this);
 		this.handleCriticalCssOff = this.handleCriticalCssOff.bind(this);
 		this.handleCriticalCssOn = this.handleCriticalCssOn.bind(this);
 
 		const shop = getQueryVariable(props.router.asPath, 'shop');
-		const app = createApp({
-			apiKey: "8c7931e855bbc74ebf8468af4b670877",
-			shopOrigin: shop
-		});
-		this.sFetch = authenticatedFetch(app);
+		const charge_id = getQueryVariable(props.router.asPath, 'charge_id');
+
+		this.state = {
+			loading: true,
+			action: null,
+			status: 'not started',
+			progress: 0,
+			paid: false,
+			error: false,
+			shop,
+			charge_id
+		}
 	}
 
 	async pollJob(jobId, interval, timeout) {
@@ -127,57 +134,136 @@ class Index extends Component {
 		}
 	}
 
-	render() {
+	showError() {
+		if(this.state.error && !this.state.loading) {
+			return (
+			<div className="banner">
+				<Banner status="warning" title="There was an error while loading the app">
+					<p>Please log out and back into shopify and try again. If the problem persists, contact <a href="mailto:alexflorisca@gmail.com">support</a></p>
+				</Banner>
+			</div>)
+		}
+	}
+
+	showPaidBanner() {
+		if(!this.state.paid && !this.state.loading) {
+			const authUrl = `/auth?shop=dev-1987.myshopify.com`;
+			return (
+			<div className="banner">
+				<Banner status="warning" title="Have you paid for this app?">
+					<p>If you haven't please <a href={authUrl}>pay the $10 one time fee here</a>. If you have paid and are seeing this in error, please contact <a href="mailto:alexflorisca@gmail.com">support</a></p>
+				</Banner>
+			</div>)
+		}
+	}
+
+	showLoading() {
+		if(this.state.loading) {
+			return(
+				<div style={{height: '100px'}}>
+				  <Frame>
+				    <Loading />
+				  </Frame>
+				</div>
+			)
+		}
+	}
+
+
+	showMainScreen() {
 		const status = this.state.status;
 		const action = this.state.action;
 		const restoreActive = action === 'restore' && status === 'active';
 		const generateActive = action === 'generate' && status === 'active';
+
+		if(!this.state.error && this.state.paid && !this.state.loading) {
+			return (<div>
+				<Layout>
+						<Layout.Section oneHalf>
+							<Card title="Generate critical CSS" sectioned>
+								<TextContainer>
+									<p><TextStyle variation="subdued">Generate the styles needed to display the initial screen of your website. You'll need to do this everytime you make a change to the styling of your website, otherwise they will be out of sync</TextStyle></p>
+									<p>
+										<Button primary onClick={this.handleCriticalCssOn} disabled={generateActive}>
+											{generateActive ? 'Generating...' : 'Generate'}
+										</Button>
+									</p>
+								</TextContainer>
+							</Card>
+						</Layout.Section>
+						<Layout.Section oneHalf>
+							<Card title="Restore" sectioned>
+								<TextContainer>
+									<p><TextStyle variation="subdued">Remove critical css from your website. Any changes made to your theme files by this app will be restored. <strong>You should run this before your remove the app</strong></TextStyle></p>
+									<p>
+										<Button secondary style={{paddingTop: '20px'}} onClick={this.handleCriticalCssOff} disabled={restoreActive}>
+											{restoreActive ? 'Restoring...' : 'Restore' }
+										</Button>
+									</p>
+								</TextContainer>
+							</Card>
+						</Layout.Section>
+					</Layout>
+					<br />
+					<br />
+					<Card title="Pricing" sectioned>
+						<TextContainer>
+							<p>There is a one-off $10 charge for this app. You can run critical-css once and forget about it, unless you make frequent changes to your website design</p>
+						</TextContainer>
+					</Card>
+					<Card title="What is Critical CSS?" sectioned>
+						<TextContainer>
+							<p>Critical CSS refers to the styles needed to display the initial screen of your website, before the user scrolls down or navigates away from the page. We generate these styles and download them as soon as possible so that users can start interacting with your website faster. The rest of the styles are loaded in the background and are applied when they're ready. This means the website will appear significantly faster to your users.</p>
+							<Heading>Lighthouse Performance</Heading>
+							<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
+							<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
+							<p><img className="lighthouse" src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
+						</TextContainer>
+					</Card>
+				</div>
+			)
+		}
+	}
+
+	async componentDidMount() {
+		let error, paid;
+		
+		const app = createApp({
+			apiKey: "8c7931e855bbc74ebf8468af4b670877",
+			shopOrigin: this.state.shop
+		});
+		this.sFetch = authenticatedFetch(app);
+
+		if(this.state.charge_id) {
+			await this.sFetch(`/store-paid?charge_id=${this.state.charge_id}`);
+			paid = true;
+		}
+		else {
+			const hasPaid = await this.sFetch('/paid').then(res => res.json());
+			if(hasPaid.error) {
+				error = true
+			}
+			else {
+				paid = hasPaid.success;
+			}
+		}
+
+		this.setState({
+			paid,
+			error,
+			loading: false
+		})
+	}
+
+	render() {
 		return (
 			<Page fullWidth title="Critical CSS">
 				{this.showGenerateBanner()}
 				{this.showRestoreBanner()}
-				<Layout>
-					<Layout.Section oneHalf>
-						<Card title="Generate critical CSS" sectioned>
-							<TextContainer>
-								<p><TextStyle variation="subdued">Generate the styles needed to display the initial screen of your website. You'll need to do this everytime you make a change to the styling of your website, otherwise they will be out of sync</TextStyle></p>
-								<p>
-									<Button primary onClick={this.handleCriticalCssOn} disabled={generateActive}>
-										{generateActive ? 'Generating...' : 'Generate'}
-									</Button>
-								</p>
-							</TextContainer>
-						</Card>
-					</Layout.Section>
-					<Layout.Section oneHalf>
-						<Card title="Restore" sectioned>
-							<TextContainer>
-								<p><TextStyle variation="subdued">Remove critical css from your website. Any changes made to your theme files by this app will be restored. <strong>You should run this before your remove the app</strong></TextStyle></p>
-								<p>
-									<Button secondary style={{paddingTop: '20px'}} onClick={this.handleCriticalCssOff} disabled={restoreActive}>
-										{restoreActive ? 'Restoring...' : 'Restore' }
-									</Button>
-								</p>
-							</TextContainer>
-						</Card>
-					</Layout.Section>
-				</Layout>
-				<br />
-				<br />
-				<Card title="Pricing" sectioned>
-					<TextContainer>
-						<p>There is a one-off $10 charge for this app. You can run critical-css once and forget about it, unless you make frequent changes to your website design</p>
-					</TextContainer>
-				</Card>
-				<Card title="What is Critical CSS?" sectioned>
-					<TextContainer>
-						<p>Critical CSS refers to the styles needed to display the initial screen of your website, before the user scrolls down or navigates away from the page. We generate these styles and download them as soon as possible so that users can start interacting with your website faster. The rest of the styles are loaded in the background and are applied when they're ready. This means the website will appear significantly faster to your users.</p>
-						<Heading>Lighthouse Performance</Heading>
-						<p>This app also has the benefit of potentially improving your Lighthouse performance score. This is a tool used by Shopify and Google to assess the performance of your website. It matters for things like how high you rank in search engines. Google are placing a growing importance on performance for this. You can access the Lighthouse tool in <strong>Google Chrome Developer Tools</strong>, in the <strong>Audit</strong> tab</p>
-						<p>You'll often see the following opportunity mentioned in a Lighthouse report. This app aims to address this by generating the critical css</p>
-						<p><img className="lighthouse" src="https://shop-critical-css.s3-eu-west-1.amazonaws.com/blocking-resources.png"></img></p>
-					</TextContainer>
-				</Card>
+				{this.showError()}
+				{this.showLoading()}
+				{this.showPaidBanner()}
+				{this.showMainScreen()}
 		</Page>)
 	}
 }
