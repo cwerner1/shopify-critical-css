@@ -25,7 +25,7 @@ Shopify.Context.initialize({
   API_SECRET_KEY: process.env.SHOPIFY_API_SECRET,
   SCOPES: process.env.SHOPIFY_APP_SCOPES,
   HOST_NAME: process.env.SHOPIFY_APP_URL.replace(/^https:\/\//, ''),
-  API_VERSION: ApiVersion.October20,
+  API_VERSION: ApiVersion.January21,
   IS_EMBEDDED_APP: true,
   SESSION_STORAGE: new Shopify.Session.CustomSessionStorage(
     store.storeCallback,
