@@ -18,6 +18,7 @@ const handle = nextApp.getRequestHandler();
 // Create a new instance of the custom storage class
 const store = new RedisStore();
 
+
 // initializes the library
 Shopify.Context.initialize({
   API_KEY: process.env.SHOPIFY_API_KEY,
