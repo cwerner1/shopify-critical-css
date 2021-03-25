@@ -75,14 +75,24 @@ class Index extends Component {
 		this.setState({ action: 'restore', status: 'active', progress: 0 });
 		const res = await this.sFetch('/restore');
 		const job = await res.json();
-		this.pollJob(job.id, 1000, 5000);
+		if(job.error) {
+			this.setState({ action: 'restore', status: 'failed' });
+		}
+		else {
+			this.pollJob(job.id, 1000, 5000);
+		}
 	}
 
 	async handleCriticalCssOn() {
 		this.setState({ action: 'generate', status: 'active', progress: 0 });
 		const res = await this.sFetch('/generate')
 		const job = await res.json();
-		this.pollJob(job.id, 2000, 20000);
+		if(job.error) {
+			this.setState({ action: 'generate', status: 'failed' });
+		}
+		else {
+			this.pollJob(job.id, 2000, 20000);
+		}
 	}
 
 	showGenerateBanner() {

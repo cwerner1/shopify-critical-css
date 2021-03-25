@@ -18,7 +18,6 @@ const handle = nextApp.getRequestHandler();
 // Create a new instance of the custom storage class
 const store = new RedisStore();
 
-
 // initializes the library
 Shopify.Context.initialize({
   API_KEY: process.env.SHOPIFY_API_KEY,
@@ -38,11 +37,10 @@ Shopify.Context.initialize({
 // persist this object in your app.
 const ACTIVE_SHOPIFY_SHOPS = {};
 
-// Connect to a local redis intance locally, and the Heroku-provided URL in production
-let REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-
 // Create / Connect to a named work queue
-let workQueue = new Queue('critical-css', REDIS_URL);
+const workQueue = new Queue('critical-css', process.env.REDIS_URL, { redis: { 
+	tls: { rejectUnauthorized: false }
+}});
 
 nextApp.prepare().then(() => {
 	const server = new Koa();
@@ -103,26 +101,44 @@ nextApp.prepare().then(() => {
 
 	// Turn on critical css
 	router.get('/generate', async (ctx) => {
-		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
-		const job = await workQueue.add({
-			type: 'generate',
-			shop: session.shop,
-			accessToken: session.accessToken
-		});
-		console.log(`created job ${job.id}`);
-		ctx.body = JSON.stringify({ id: job.id });
+		try {
+			const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+			if(!session) {
+				ctx.body = JSON.stringify({ error: "could not find session" });
+				return;
+			}
+			const job = await workQueue.add({
+				type: 'generate',
+				shop: session.shop,
+				accessToken: session.accessToken
+			});
+			console.log(`created job ${job.id}`);
+			ctx.body = JSON.stringify({ id: job.id });
+		} catch(e) {
+			console.log(e);
+			ctx.body = JSON.stringify({ error: "could not find session" });
+		}
 	});
 
 	// Turn off critical css
 	router.get('/restore', async (ctx) => {
-		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
-		const job = await workQueue.add({
-			type: 'restore',
-			shop: session.shop,
-			accessToken: session.accessToken
-		});
-		console.log(`created job ${job.id}`);
-		ctx.body = JSON.stringify({ id: job.id });
+		try {
+			const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+			if(!session) {
+				ctx.body = JSON.stringify({ error: "could not find session" });
+				return;
+			}
+			const job = await workQueue.add({
+				type: 'restore',
+				shop: session.shop,
+				accessToken: session.accessToken
+			});
+			console.log(`created job ${job.id}`);
+			ctx.body = JSON.stringify({ id: job.id });
+		} catch(e) {
+			console.log(e);
+			ctx.body = JSON.stringify({ error: "could not find session" });
+		}
 	});
 
 	// Get Job route
