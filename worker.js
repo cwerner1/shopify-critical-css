@@ -72,7 +72,11 @@ async function criticalCssRestore(job, shopifyAdmin) {
 
 function start() {
 	// Connect to the named work queue
-	let workQueue = new Queue('critical-css', REDIS_URL);
+	let workQueue = new Queue('critical-css', REDIS_URL, { 
+		redis: {
+			tls: { rejectUnauthorized: false }
+		}
+	});
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
 		job.progress(0);

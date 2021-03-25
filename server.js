@@ -3,28 +3,48 @@ const dotenv = require('dotenv');
 const Koa = require('koa');
 const Router = require('koa-router');
 const next = require('next');
-const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
-const { verifyRequest } = require('@shopify/koa-shopify-auth');
-const session = require('koa-session');
+const { default: shopifyAuth, verifyRequest } = require('@shopify/koa-shopify-auth');
+const { Shopify, ApiVersion } = require('@shopify/shopify-api');
 const Queue = require('bull');
 const getSubscriptionUrl = require('./lib/getSubscriptionUrl');
+const RedisStore = require('./lib/redis-store');
 
 dotenv.config();
-
 const port = parseInt(process.env.PORT, 10) || 3000;
 const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
-const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
-// Connect to a local redis intance locally, and the Heroku-provided URL in production
-let REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+// Create a new instance of the custom storage class
+const store = new RedisStore();
+
+// initializes the library
+Shopify.Context.initialize({
+  API_KEY: process.env.SHOPIFY_API_KEY,
+  API_SECRET_KEY: process.env.SHOPIFY_API_SECRET,
+  SCOPES: process.env.SHOPIFY_APP_SCOPES,
+  HOST_NAME: process.env.SHOPIFY_APP_URL.replace(/^https:\/\//, ''),
+  API_VERSION: ApiVersion.January21,
+  IS_EMBEDDED_APP: true,
+  SESSION_STORAGE: new Shopify.Session.CustomSessionStorage(
+    store.storeCallback,
+    store.loadCallback,
+    store.deleteCallback,
+  ),
+});
+
+// Storing the currently active shops in memory will force them to re-login when your server restarts. You should
+// persist this object in your app.
+const ACTIVE_SHOPIFY_SHOPS = {};
 
 // Create / Connect to a named work queue
-let workQueue = new Queue('critical-css', REDIS_URL);
+const workQueue = new Queue('critical-css', process.env.REDIS_URL, { redis: { 
+	tls: { rejectUnauthorized: false }
+}});
 
 nextApp.prepare().then(() => {
 	const server = new Koa();
+	server.keys = [Shopify.Context.API_SECRET_KEY];
 	const gdprRouter = new Router();
 
 	gdprRouter.post('/customers/redact', (ctx, next) => {
@@ -45,58 +65,84 @@ nextApp.prepare().then(() => {
 	});
 
 	server.use(gdprRouter.routes());
-	
-	server.use(session({ secure: true, sameSite: 'none' }, server));
-	server.keys = [SHOPIFY_API_SECRET_KEY];
-	server.use(createShopifyAuth({
-		apiKey: SHOPIFY_API_KEY,
-		secret: SHOPIFY_API_SECRET_KEY,
-		scopes: [
-			'read_themes', 
-			'write_themes',
-			'read_products',
-			'read_content',
-			'read_product_listings'
-		],
+	server.use(shopifyAuth({
 		async afterAuth(ctx) {
-			const { shop, accessToken } = ctx.session;
-			ctx.token = accessToken;
-			const returnUrl = `https://${shop}/admin/apps/critical-css`;
-			const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
-			ctx.redirect(subscriptionUrl);
+			const { shop, accessToken } = ctx.state.shopify;
+			console.log('ACTIVE_SHOPIFY_SHOPS', ACTIVE_SHOPIFY_SHOPS)
+			ACTIVE_SHOPIFY_SHOPS[shop] = true;
+
+			// Your app should handle the APP_UNINSTALLED webhook to make sure merchants go through OAuth if they reinstall it
+      const response = await Shopify.Webhooks.Registry.register({
+        shop,
+        accessToken,
+        path: "/webhooks",
+        topic: "APP_UNINSTALLED",
+        webhookHandler: async (topic, shop, body) => delete ACTIVE_SHOPIFY_SHOPS[shop],
+      });
+
+			if (!response.success) {
+        console.log(
+          `Failed to register APP_UNINSTALLED webhook: ${response.result}`
+        );
+      }
+
+			// Check if a charge has been made for this shop
+			const paid = await store.getAsync(shop);
+			const returnUrl = `https://${shop}/admin/apps/critical-css?shop=${shop}`;
+			if(!paid) {
+				const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
+				ctx.redirect(subscriptionUrl);
+			}
+			ctx.redirect(returnUrl);
 		}
 	}))
-
-	server.use(verifyRequest());
 	
 	const router = new Router();
 
 	// Turn on critical css
-	router.post('/generate', async (ctx, next) => {
-		console.log(`/generate request from ${ctx.session.shop}`);
-		const job = await workQueue.add({
-			type: 'generate',
-			shop: ctx.session.shop,
-			accessToken: ctx.session.accessToken
-		});
-		console.log(`created job ${job.id}`);
-		ctx.body = JSON.stringify({ id: job.id });
+	router.get('/generate', async (ctx) => {
+		try {
+			const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+			if(!session) {
+				ctx.body = JSON.stringify({ error: "could not find session" });
+				return;
+			}
+			const job = await workQueue.add({
+				type: 'generate',
+				shop: session.shop,
+				accessToken: session.accessToken
+			});
+			console.log(`created job ${job.id}`);
+			ctx.body = JSON.stringify({ id: job.id });
+		} catch(e) {
+			console.log(e);
+			ctx.body = JSON.stringify({ error: "could not find session" });
+		}
 	});
 
 	// Turn off critical css
-	router.post('/restore', async (ctx, next) => {
-		console.log(`/restore request from ${ctx.session.shop}`);
-		const job = await workQueue.add({
-			type: 'restore',
-			shop: ctx.session.shop,
-			accessToken: ctx.session.accessToken
-		});
-		console.log(`created job ${job.id}`);
-		ctx.body = JSON.stringify({ id: job.id });
+	router.get('/restore', async (ctx) => {
+		try {
+			const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+			if(!session) {
+				ctx.body = JSON.stringify({ error: "could not find session" });
+				return;
+			}
+			const job = await workQueue.add({
+				type: 'restore',
+				shop: session.shop,
+				accessToken: session.accessToken
+			});
+			console.log(`created job ${job.id}`);
+			ctx.body = JSON.stringify({ id: job.id });
+		} catch(e) {
+			console.log(e);
+			ctx.body = JSON.stringify({ error: "could not find session" });
+		}
 	});
 
 	// Get Job route
-	router.get('/job/:id', async (ctx, next) => {
+	router.get('/job/:id', async (ctx) => {
 		// Allows the client to query the state of a background job
 		let pathArr = ctx.path.split('/');
 		let id = pathArr[2];
@@ -112,15 +158,57 @@ nextApp.prepare().then(() => {
 		}
 	});
 
-	server.use(router.routes());
-	server.use(router.allowedMethods());	
-	
-	server.use(async(ctx) => {
+	const handleRequest = async (ctx) => {
 		await handle(ctx.req, ctx.res);
-		ctx.respond = false;
-		ctx.res.statusCode = 200;
-		return;
+    ctx.respond = false;
+    ctx.res.statusCode = 200;
+  };
+
+	router.get('/store-paid', async ctx => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+		const charge_id = ctx.query.charge_id;
+		if(session && charge_id) {
+			const paid = await store.setAsync(session.shop, JSON.stringify({ charge_id, timestamp: new Date() }));
+			if(paid == 'OK') {
+				ctx.body = JSON.stringify({ success: true });
+				return;
+			}
+			ctx.body = JSON.stringify({ success: false });
+		}
 	})
+
+	router.get('/paid', async ctx => {
+		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
+		if(session) {
+			const paid = await store.getAsync(session.shop);
+			if(paid) {
+				ctx.body = JSON.stringify({ success: true });
+				return;
+			}
+			ctx.body = JSON.stringify({ success: false });
+			return;
+		}
+		ctx.body = JSON.stringify({error: "Could not load current session"});
+	})
+
+	router.get("/", async (ctx) => {
+    const shop = ctx.query.shop;
+
+    if (ACTIVE_SHOPIFY_SHOPS[shop] === undefined) {
+      ctx.redirect(`/auth?shop=${shop}`);
+    } else {
+			nextApp.render(ctx.req, ctx.res, '/')
+			ctx.respond = false;
+    	ctx.res.statusCode = 200;
+    }
+  });
+
+	router.get("(/_next/static/.*)", handleRequest);
+  router.get("/_next/webpack-hmr", handleRequest);
+	router.get('(.*)', verifyRequest, handleRequest);
+	
+	server.use(router.routes());
+	server.use(router.allowedMethods());
 
 	// You can listen to global events to get notified when jobs are processed
 	workQueue.on('global:completed', (jobId, result) => {
