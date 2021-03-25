@@ -122,7 +122,7 @@ class Index extends Component {
 			}
 			else if(this.state.status === 'failed') {
 				return (<div className="banner"><Banner status="warning" title="Couldn't remove critical CSS">
-					<p>There was an error while trying to remove the critical css and restore your theme files. You can do this manually if you wish, following these instructions:</p>
+					<p>There was an error while trying to restore your theme files. Please try again. If the problem keeps happening, you can do this manually if you wish, following these instructions:</p>
 					<List>
 						<List.Item>Click on <strong>Online Store</strong>, then on <strong>Actions</strong> &gt; <strong>Edit Code</strong> next to your live theme </List.Item>
 						<List.Item>In the right hand bar, find <strong>snippets/critical-css.liquid</strong> and delete it</List.Item>

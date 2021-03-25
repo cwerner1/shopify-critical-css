@@ -68,7 +68,6 @@ nextApp.prepare().then(() => {
 	server.use(shopifyAuth({
 		async afterAuth(ctx) {
 			const { shop, accessToken } = ctx.state.shopify;
-			console.log('ACTIVE_SHOPIFY_SHOPS', ACTIVE_SHOPIFY_SHOPS)
 			ACTIVE_SHOPIFY_SHOPS[shop] = true;
 
 			// Your app should handle the APP_UNINSTALLED webhook to make sure merchants go through OAuth if they reinstall it
