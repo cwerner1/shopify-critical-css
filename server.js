@@ -89,10 +89,14 @@ nextApp.prepare().then(() => {
 			// Check if a charge has been made for this shop
 			const paid = await store.getAsync(shop);
 			const returnUrl = `https://${shop}/admin/apps/critical-css?shop=${shop}`;
+			console.log('paid', paid);
 			if(!paid) {
+				console.log('redirecting to charge');
 				const subscriptionUrl = await getSubscriptionUrl(accessToken, shop, returnUrl);
 				ctx.redirect(subscriptionUrl);
+				return;
 			}
+			console.log('redirecting back to shop');
 			ctx.redirect(returnUrl);
 		}
 	}))
