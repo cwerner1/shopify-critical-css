@@ -79,7 +79,7 @@ class Index extends Component {
 			this.setState({ action: 'restore', status: 'failed' });
 		}
 		else {
-			this.pollJob(job.id, 1000, 5000);
+			this.pollJob(job.id, 1000, 30000);
 		}
 	}
 
@@ -91,7 +91,7 @@ class Index extends Component {
 			this.setState({ action: 'generate', status: 'failed' });
 		}
 		else {
-			this.pollJob(job.id, 2000, 20000);
+			this.pollJob(job.id, 2000, 120000);
 		}
 	}
 
