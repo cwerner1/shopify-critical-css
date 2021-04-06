@@ -40,6 +40,7 @@ async function criticalCssGenerate(job, shopifyAdmin) {
 			name: 'snippets/critical-css.liquid',
 			value: criticalCss
 		});
+		console.log('Created snippets/critical-css.liquid...');
 	});
 	job.progress(80);
 	
@@ -50,6 +51,7 @@ async function criticalCssGenerate(job, shopifyAdmin) {
 		name: 'layout/theme.liquid',
 		value: updatedThemeLiquid
 	});
+	console.log('Updated layout/theme.liquid...');
 	job.progress(90);
 }
 
