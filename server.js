@@ -108,6 +108,7 @@ nextApp.prepare().then(() => {
 				ctx.body = JSON.stringify({ error: "could not find session" });
 				return;
 			}
+			console.log(`/generate for ${session.shop} with access token: ${session.accessToken}`)
 			const job = await workQueue.add({
 				type: 'generate',
 				shop: session.shop,
