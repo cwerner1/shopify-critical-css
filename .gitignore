@@ -16,6 +16,7 @@ config/shopify.yml
 npm-debug.log
 .env
 .env.*
+test-shop-urls.js
 
 
 # Compiled source #
