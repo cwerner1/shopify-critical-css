@@ -35,15 +35,15 @@ async function initShopifyAdmin({ shop, accessToken}) {
  * @param {Object} shopifyAdmin 
  */
 async function criticalCssGenerate(job, shopifyAdmin) {
-	await criticalCss.generateForShop(shopifyAdmin, job, (criticalCss) => {
-		const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
-		console.log(`Generating critical css used: ${memUsed}MB`);
-		shopifyAdmin.writeAsset({
-			name: 'snippets/critical-css.liquid',
-			value: criticalCss
-		});
-		console.log('Created snippets/critical-css.liquid...');
+	const css = await criticalCss.generateForShop(shopifyAdmin, job)
+	
+	const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
+	console.log(`Generating critical css used: ${memUsed}MB`);
+	await shopifyAdmin.writeAsset({
+		name: 'snippets/critical-css.liquid',
+		value: css
 	});
+	console.log('Created snippets/critical-css.liquid...');
 	job.progress(80);
 	
 	const themeLiquid = await shopifyAdmin.getThemeLiquid();
