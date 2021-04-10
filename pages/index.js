@@ -38,6 +38,7 @@ class Index extends Component {
 			action: null,
 			status: 'not started',
 			progress: 0,
+			result: [],
 			paid: false,
 			error: false,
 			shop,
@@ -51,7 +52,8 @@ class Index extends Component {
 			this.setState({
 				action: result.type, 
 				status: result.state,
-				progress: result.progress  
+				progress: result.progress,
+				result: result.result ? JSON.parse(result.result) : []
 			})
 			if(result.state === 'completed' || result.state === 'failed') {
 				clearInterval(intervalId);
@@ -97,8 +99,28 @@ class Index extends Component {
 
 	showGenerateBanner() {
 		if(this.state.action === 'generate') {
-			if(this.state.status === 'completed') {
-				return (<div className="banner"><Banner status="success" title="Successfully generated critical css!" className="banner"><p>Your site will now load faster for all users</p></Banner></div>);
+			if(this.state.status === 'completed' && this.state.result.length > 0) {
+				const failed = this.state.result.filter(page => page.error).map(page => <li>{page.type === 'index' ? 'home' : page.type}</li>);
+				const success = this.state.result.filter(page => page.success).map(page => <li>{page.type === 'index' ? 'home' : page.type}</li>);
+				const successAll = success.length === this.state.result.length;
+				const status = successAll ? 'success' : 'warning';
+				const title = successAll ? 'Successfully generated critical css!' : 'Could not generate critical css for all pages';
+				const message = successAll
+					? <p>Your site will now load faster for all users</p>
+					: (<div>
+							<p>Could not generate critical css for these pages. This is usually due to errors in the css code on these pages. Please fix the errors and try again</p>
+							<ul>
+								{failed}
+							</ul>
+						</div>);
+
+				return (
+					<div className="banner">
+						<Banner status={status} title={title} className="banner">
+							{message}
+						</Banner>
+					</div>
+				);
 			}
 			else if(this.state.status === 'failed') {
 				return (<div className="banner"><Banner status="critical" title="Failed to generate critical css" className="banner"><p>Something went wrong trying to generate the critical css fo your site. Please try again. If this keeps happening, please contact <a href="mailto:alexflorisca@gmail.com">support</a></p></Banner></div>);

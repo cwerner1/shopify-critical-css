@@ -1,6 +1,6 @@
 require('isomorphic-fetch');
 const ShopifyAdmin = require('./lib/shopify');
-const criticalCss = require('./lib/critical-css');
+const { generateForShop, uploadShopifySnippets } = require('./lib/critical-css');
 const parseThemeLiquid = require('./lib/parseThemeLiquid');
 const reverseThemeLiquid = require('./lib/reverseThemeLiquid');
 const throng = require('throng');
@@ -35,26 +35,36 @@ async function initShopifyAdmin({ shop, accessToken}) {
  * @param {Object} shopifyAdmin 
  */
 async function criticalCssGenerate(job, shopifyAdmin) {
-	const css = await criticalCss.generateForShop(shopifyAdmin, job)
-	
-	const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
-	console.log(`Generating critical css used: ${memUsed}MB`);
-	await shopifyAdmin.writeAsset({
-		name: 'snippets/critical-css.liquid',
-		value: css
-	});
-	console.log('Created snippets/critical-css.liquid...');
-	job.progress(80);
-	
-	const themeLiquid = await shopifyAdmin.getThemeLiquid();
-	const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
-	// Diff and Only write if different
-	await shopifyAdmin.writeAsset({
-		name: 'layout/theme.liquid',
-		value: updatedThemeLiquid
-	});
-	console.log('Updated layout/theme.liquid...');
-	job.progress(90);
+	try {
+		const pages = await generateForShop(shopifyAdmin, job)
+		await uploadShopifySnippets(shopifyAdmin, pages);
+		const failed = pages.filter(page => page.error);
+		job.progress(80);
+		if(failed.length === 0) {
+			// Update theme.liquid
+			const themeLiquid = await shopifyAdmin.getThemeLiquid();
+			const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
+			// Diff and Only write if different
+			await shopifyAdmin.writeAsset({
+				name: 'layout/theme.liquid',
+				value: updatedThemeLiquid
+			});
+			console.log('Updated layout/theme.liquid...');
+			job.progress(90);
+		}
+		
+		const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
+		console.log(`Generating critical css used: ${memUsed}MB`);
+		return pages.map(page => { 
+			return {
+				type: page.type,
+				error: page.error,
+				success: !!!page.error
+			}
+		});
+	} catch(e) {
+		throw e;
+	}
 }
 
 /**
@@ -63,7 +73,18 @@ async function criticalCssGenerate(job, shopifyAdmin) {
  * @param {Object} shopifyAdmin 
  */
 async function criticalCssRestore(job, shopifyAdmin) {
-	await shopifyAdmin.deleteAsset('snippets/critical-css.liquid');
+	const p = [];
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-index.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-collection.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-list-collections.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-product.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-blog.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-article.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-search.liquid'));
+	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-page.liquid'));
+	await Promise.all(p);
+
 	const themeLiquid = await shopifyAdmin.getThemeLiquid();
 	const updatedThemeLiquid = reverseThemeLiquid(themeLiquid.value);
 	// Diff and Only write if different
@@ -76,7 +97,7 @@ async function criticalCssRestore(job, shopifyAdmin) {
 
 function start() {
 	// Connect to the named work queue
-	let workQueue = new Queue('critical-css', REDIS_URL, { 
+	let workQueue = new Queue('critical-css', REDIS_URL, {
 		redis: {
 			tls: { rejectUnauthorized: false }
 		}
@@ -84,6 +105,7 @@ function start() {
 
 	workQueue.process(maxJobsPerWorker, async (job) => {
 		job.progress(0);
+		let result;
 		try {
 			const shopifyAdmin = await initShopifyAdmin({
 				shop: job.data.shop,
@@ -92,13 +114,14 @@ function start() {
 			job.progress(10);
 	
 			if(job.data.type === 'generate') {
-				await criticalCssGenerate(job, shopifyAdmin);
+				result = await criticalCssGenerate(job, shopifyAdmin);
 			}
 			if(job.data.type === 'restore') {
-				await criticalCssRestore(job, shopifyAdmin);
+				result = await criticalCssRestore(job, shopifyAdmin);
 			}
 			job.progress(100);
-			return { success: true };
+			
+			return result;
 		} catch (e) {
 			console.log(e);
 			throw e;

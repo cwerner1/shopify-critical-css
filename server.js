@@ -133,7 +133,7 @@ nextApp.prepare().then(() => {
 			const job = await workQueue.add({
 				type: 'restore',
 				shop: session.shop,
-				accessToken: session.accessToken
+				accessToken: session.accessToken,
 			});
 			console.log(`created job ${job.id}`);
 			ctx.body = JSON.stringify({ id: job.id });
@@ -156,7 +156,14 @@ nextApp.prepare().then(() => {
 			let state = await job.getState();
 			let progress = job._progress;
 			let reason = job.failedReason;
-			ctx.body = JSON.stringify({ id, state, progress, reason, type: job.data.type });
+			ctx.body = JSON.stringify({
+				id, 
+				state, 
+				progress, 
+				reason, 
+				type: job.data.type,
+				result: job.data.result
+			});
 		}
 	});
 
@@ -213,7 +220,14 @@ nextApp.prepare().then(() => {
 	server.use(router.allowedMethods());
 
 	// You can listen to global events to get notified when jobs are processed
-	workQueue.on('global:completed', (jobId, result) => {
+	workQueue.on('global:completed', async (jobId, result) => {
+		let job = await workQueue.getJob(jobId);
+		if (job !== null) {
+			job.update({
+				...job.data,
+				result: result
+			});
+		}
 	  console.log(`Job ${jobId} completed with result ${result}`);
 	});
 
