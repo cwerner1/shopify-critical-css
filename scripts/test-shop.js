@@ -1,3 +1,4 @@
+require('isomorphic-fetch');
 const { generateForShop } = require("../lib/critical-css");
 const fs = require("fs");
 const ShopifyAdmin = require("../lib/shopify");
@@ -5,35 +6,22 @@ const ShopifyAdmin = require("../lib/shopify");
 process.env.TIMEOUT = 300000;
 process.env.CRITICAL_CSS_CONCURRENCY = 1;
 
-const shopUrls = [
-   { type: 'index', url: 'https://hairstreaq.myshopify.com/' },
-   {
-     type: 'list-collections',
-     url: 'https://hairstreaq.myshopify.com/collections'
-   },
-  //  {
-  //    type: 'product',
-  //    url: 'https://hairstreaq.myshopify.com/products/2bundle-hairstreaq-detangling-brushes'
-  //  },
-   {
-     type: 'search',
-     url: 'https://hairstreaq.myshopify.com/search?q=2+- Hairstreaq Detangling Brushes'
-   },
-   {
-     type: 'collection',
-     url: 'https://hairstreaq.myshopify.com/collections/frontpage'
-   },
-   {
-     type: 'page',
-     url: 'https://hairstreaq.myshopify.com/pages/contact-us'
-   },
-   { type: 'blog', url: 'https://hairstreaq.myshopify.com/blogs/news' }
- ]
+async function testShop() {
+	const shopifyAdmin = new ShopifyAdmin({
+		accessToken: '',
+		shop: '',
+		version: '2020-04'
+	})
 
-generateForShop(ShopifyAdmin, { progress: () => null }, shopUrls)
-  .then(criticalCSs => {
-		fs.writeFileSync('test.txt', criticalCSs)
-		const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
-		console.log(`Process used: ${memUsed}MB`);
-	});
+	await shopifyAdmin.init();
+	console.log('after shopifyAdmin init()');
+	const pages = await generateForShop(shopifyAdmin, { progress: () => null })
+	// pages.forEach(page => {
+	// 	fs.writeFileSync(`test/critical-css-${page.type}.txt`, page.css)
 
+	// })
+	const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
+	console.log(`Process used: ${memUsed}MB`);
+}
+
+testShop();
