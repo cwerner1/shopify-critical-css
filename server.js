@@ -72,17 +72,20 @@ nextApp.prepare().then(() => {
 			ACTIVE_SHOPIFY_SHOPS[shop] = true;
 
 			// Your app should handle the APP_UNINSTALLED webhook to make sure merchants go through OAuth if they reinstall it
-      const response = await Shopify.Webhooks.Registry.register({
+      const registration = await Shopify.Webhooks.Registry.register({
         shop,
         accessToken,
         path: "/webhooks",
         topic: "APP_UNINSTALLED",
-        webhookHandler: async (topic, shop, body) => delete ACTIVE_SHOPIFY_SHOPS[shop],
+        webhookHandler: async (topic, shop, body) => { 
+					console.log('APP_UNINSTALLED');
+					delete ACTIVE_SHOPIFY_SHOPS[shop];
+				},
       });
 
-			if (!response.success) {
+			if (!registration.success) {
         console.log(
-          `Failed to register APP_UNINSTALLED webhook: ${response.result}`
+          `Failed to register APP_UNINSTALLED webhook: ${registration.result}`
         );
       }
 
@@ -99,6 +102,12 @@ nextApp.prepare().then(() => {
 	}))
 	
 	const router = new Router();
+
+	router.post('/webhooks', async (ctx) => {
+		await Shopify.Webhooks.Registry.process(ctx.req, ctx.res);
+		console.log(`Webhook processed with status code 200`);
+	});
+
 
 	// Turn on critical css
 	router.get('/generate', async (ctx) => {
@@ -173,6 +182,7 @@ nextApp.prepare().then(() => {
     ctx.res.statusCode = 200;
   };
 
+	// store the charge id for a shop that's paid the fee
 	router.get('/store-paid', async ctx => {
 		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
 		const charge_id = ctx.query.charge_id;
@@ -186,6 +196,7 @@ nextApp.prepare().then(() => {
 		}
 	})
 
+	// has a shop paid the fee?
 	router.get('/paid', async ctx => {
 		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
 		if(session) {
@@ -200,6 +211,7 @@ nextApp.prepare().then(() => {
 		ctx.body = JSON.stringify({error: "Could not load current session"});
 	})
 
+	// Load main app
 	router.get("/", async (ctx) => {
     const shop = ctx.query.shop;
 

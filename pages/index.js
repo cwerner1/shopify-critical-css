@@ -179,7 +179,7 @@ class Index extends Component {
 
 	showPaidBanner() {
 		if(!this.state.paid && !this.state.loading) {
-			const authUrl = `/auth?shop=${shop}`;
+			const authUrl = `/auth?shop=${this.state.shop}`;
 			return (
 			<div className="banner">
 				<Banner status="warning" title="Have you paid for this app?">
