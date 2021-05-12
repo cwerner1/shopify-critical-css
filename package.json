@@ -7,7 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js --exec",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js"
+    "start": "NODE_ENV=production node server.js",
+    "read-redis": "node scripts/read-redis.js",
+    "delete-redis": "node scripts/delete-redis.js",
+    "put-redis": "node scripts/put-redis.js"
   },
   "keywords": [],
   "author": "",
