@@ -23,7 +23,7 @@ async function initShopifyAdmin({ shop, accessToken}) {
 	const shopifyAdmin = new ShopifyAdmin({
 		accessToken: accessToken,
 		shop: shop,
-		version: '2020-04'
+		version: '2021-04'
 	})
 	await shopifyAdmin.init();
 	return shopifyAdmin;

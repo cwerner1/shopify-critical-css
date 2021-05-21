@@ -10,7 +10,7 @@ async function testShop() {
 	const shopifyAdmin = new ShopifyAdmin({
 		accessToken: '',
 		shop: '',
-		version: '2020-04'
+		version: '2021-04'
 	})
 
 	await shopifyAdmin.init();
@@ -24,4 +24,8 @@ async function testShop() {
 	console.log(`Process used: ${memUsed}MB`);
 }
 
-testShop();
+try {
+	testShop();
+} catch(e) {
+	console.log(e);
+}
