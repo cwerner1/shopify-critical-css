@@ -15,11 +15,12 @@ async function testShop() {
 
 	await shopifyAdmin.init();
 	console.log('after shopifyAdmin init()');
-	const pages = await generateForShop(shopifyAdmin, { progress: () => null })
-	// pages.forEach(page => {
-	// 	fs.writeFileSync(`test/critical-css-${page.type}.txt`, page.css)
-
-	// })
+	try {
+		await generateForShop(shopifyAdmin, { progress: () => null })
+	}
+	catch(e) {
+		console.log(e.message);
+	}
 	const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
 	console.log(`Process used: ${memUsed}MB`);
 }

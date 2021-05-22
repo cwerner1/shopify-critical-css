@@ -41,6 +41,7 @@ class Index extends Component {
 			result: [],
 			paid: false,
 			error: false,
+			errorMessage: '',
 			shop,
 			charge_id
 		}
@@ -53,6 +54,7 @@ class Index extends Component {
 				action: result.type, 
 				status: result.state,
 				progress: result.progress,
+				errorMessage: result.reason,
 				result: result.result ? JSON.parse(result.result) : []
 			})
 			if(result.state === 'completed' || result.state === 'failed') {
@@ -123,7 +125,16 @@ class Index extends Component {
 				);
 			}
 			else if(this.state.status === 'failed') {
-				return (<div className="banner"><Banner status="critical" title="Failed to generate critical css" className="banner"><p>Something went wrong trying to generate the critical css fo your site. Please try again. If this keeps happening, please contact <a href="mailto:alexflorisca@gmail.com">support</a></p></Banner></div>);
+				return (
+					<div className="banner">
+						<Banner status="critical" title="Failed to generate critical css" className="banner">
+							{ this.state.errorMessage 
+								? <p>{this.state.errorMessage}</p>
+								: <p>Something went wrong trying to generate the critical css fo your site. Please try again. If this keeps happening, please contact <a href="mailto:alexflorisca@gmail.com">support</a></p>
+							}
+						</Banner>
+					</div>
+				);
 			}
 			else {
 				return (
