@@ -237,7 +237,7 @@ class Index extends Component {
 						<Layout.Section oneHalf>
 							<Card title="Restore" sectioned>
 								<TextContainer>
-									<p><TextStyle variation="subdued">Remove critical css from your website. Any changes made to your theme files by this app will be restored. <strong>You should run this before your remove the app</strong></TextStyle></p>
+									<p><TextStyle variation="subdued">Remove critical css from your website. Any changes made to your theme files by this app will be restored. <strong>You should run this before you remove the app</strong></TextStyle></p>
 									<p>
 										<Button secondary style={{paddingTop: '20px'}} onClick={this.handleCriticalCssOff} disabled={restoreActive}>
 											{restoreActive ? 'Restoring...' : 'Restore' }
