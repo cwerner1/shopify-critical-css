@@ -8,6 +8,7 @@ const { Shopify, ApiVersion } = require('@shopify/shopify-api');
 const Queue = require('bull');
 const getSubscriptionUrl = require('./lib/getSubscriptionUrl');
 const RedisStore = require('./lib/redis-store');
+const ShopifyAdmin = require('./lib/shopify');
 
 dotenv.config();
 const port = parseInt(process.env.PORT, 10) || 3000;
@@ -186,8 +187,17 @@ nextApp.prepare().then(() => {
 	router.get('/store-paid', async ctx => {
 		const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res, true);
 		const charge_id = ctx.query.charge_id;
+
+		const shopifyAdmin = new ShopifyAdmin({
+			accessToken: session.accessToken,
+			shop: session.shop,
+			version: '2021-04'
+		})
+		await shopifyAdmin.init();
+		const themeLiquid = await shopifyAdmin.getThemeLiquid();
+
 		if(session && charge_id) {
-			const paid = await store.setAsync(session.shop, JSON.stringify({ charge_id, timestamp: new Date() }));
+			const paid = await store.setAsync(session.shop, JSON.stringify({ charge_id, timestamp: new Date(), originalTheme: themeLiquid.value }));
 			if(paid == 'OK') {
 				ctx.body = JSON.stringify({ success: true });
 				return;

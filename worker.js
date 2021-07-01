@@ -1,10 +1,11 @@
 require('isomorphic-fetch');
+const throng = require('throng');
+const Queue = require("bull");
 const ShopifyAdmin = require('./lib/shopify');
 const { generateForShop, uploadShopifySnippets } = require('./lib/critical-css');
 const parseThemeLiquid = require('./lib/parseThemeLiquid');
-const reverseThemeLiquid = require('./lib/reverseThemeLiquid');
-const throng = require('throng');
-const Queue = require("bull");
+const restoreThemeLiquid = require('./lib/restoreThemeLiquid');
+const RedisStore = require('./lib/redis-store');
 
 // Connect to a local redis instance locally, and the Heroku-provided URL in production
 let REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";
@@ -72,7 +73,7 @@ async function criticalCssGenerate(job, shopifyAdmin) {
  * @param {Object} job 
  * @param {Object} shopifyAdmin 
  */
-async function criticalCssRestore(job, shopifyAdmin) {
+async function criticalCssRestore(job, shopifyAdmin, redisStore) {
 	const p = [];
 	p.push(shopifyAdmin.deleteAsset('snippets/critical-css.liquid'));
 	p.push(shopifyAdmin.deleteAsset('snippets/critical-css-index.liquid'));
@@ -86,7 +87,7 @@ async function criticalCssRestore(job, shopifyAdmin) {
 	await Promise.all(p);
 
 	const themeLiquid = await shopifyAdmin.getThemeLiquid();
-	const updatedThemeLiquid = reverseThemeLiquid(themeLiquid.value);
+	const updatedThemeLiquid = await restoreThemeLiquid(themeLiquid.value, redisStore, shopifyAdmin.shop);
 	// Diff and Only write if different
 	await shopifyAdmin.writeAsset({
 		name: 'layout/theme.liquid',
@@ -96,6 +97,9 @@ async function criticalCssRestore(job, shopifyAdmin) {
 
 
 function start() {
+
+	const redisStore = new RedisStore();
+
 	// Connect to the named work queue
 	let workQueue = new Queue('critical-css', REDIS_URL, {
 		redis: {
@@ -117,7 +121,7 @@ function start() {
 				result = await criticalCssGenerate(job, shopifyAdmin);
 			}
 			if(job.data.type === 'restore') {
-				result = await criticalCssRestore(job, shopifyAdmin);
+				result = await criticalCssRestore(job, shopifyAdmin, redisStore);
 			}
 			job.progress(100);
 			
