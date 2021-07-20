@@ -1,4 +1,4 @@
-# Speedy
+# Shopify Critical CSS
 
 A Shopify app that speeds up your store for first time customers. 
 
