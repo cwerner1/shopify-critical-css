@@ -1,5 +1,5 @@
 require('isomorphic-fetch');
-const { generateForShop } = require("../lib/critical-css");
+const { generateForShop, uploadShopifySnippets } = require("../lib/critical-css");
 const fs = require("fs");
 const ShopifyAdmin = require("../lib/shopify");
 
@@ -16,7 +16,8 @@ async function testShop() {
 	await shopifyAdmin.init();
 	console.log('after shopifyAdmin init()');
 	try {
-		await generateForShop(shopifyAdmin, { progress: () => null })
+		const pages = await generateForShop(shopifyAdmin, { progress: () => null })
+		// await uploadShopifySnippets(shopifyAdmin, pages);
 	}
 	catch(e) {
 		console.log(e.message);
