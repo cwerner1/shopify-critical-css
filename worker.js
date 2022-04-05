@@ -39,20 +39,17 @@ async function criticalCssGenerate(job, shopifyAdmin) {
 	try {
 		const pages = await generateForShop(shopifyAdmin, job)
 		await uploadShopifySnippets(shopifyAdmin, pages);
-		const failed = pages.filter(page => page.error);
 		job.progress(80);
-		if(failed.length === 0) {
-			// Update theme.liquid
-			const themeLiquid = await shopifyAdmin.getThemeLiquid();
-			const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
-			// Diff and Only write if different
-			await shopifyAdmin.writeAsset({
-				name: 'layout/theme.liquid',
-				value: updatedThemeLiquid
-			});
-			console.log('Updated layout/theme.liquid...');
-			job.progress(90);
-		}
+		// Update theme.liquid
+		const themeLiquid = await shopifyAdmin.getThemeLiquid();
+		const updatedThemeLiquid = parseThemeLiquid(themeLiquid.value);
+		// Diff and Only write if different
+		await shopifyAdmin.writeAsset({
+			name: 'layout/theme.liquid',
+			value: updatedThemeLiquid
+		});
+		console.log('Updated layout/theme.liquid...');
+		job.progress(90);
 		
 		const memUsed = process.memoryUsage().heapUsed / 1024 / 1024;
 		console.log(`Generating critical css used: ${memUsed}MB`);
