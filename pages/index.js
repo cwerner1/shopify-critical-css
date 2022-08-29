@@ -17,6 +17,7 @@ import {
 	Frame,
 	Loading
 } from '@shopify/polaris';
+import { redirect } from 'next/dist/next-server/server/api-utils';
 
 
 class Index extends Component {
@@ -301,6 +302,14 @@ class Index extends Component {
 	render() {
 		return (
 			<Page fullWidth title="Critical CSS">
+				<div style={{ color: 'red', border: '1px solid red', padding: '5px' }}>
+					<p><strong>This app is in sunsetting mode</strong></p>
+					<p>This app will no longer be available from the 30th September. You have 2 options:</p>
+					<ol>
+						<li>You may do nothing and keep your current generated critical css. You will not be able to generate new critical css from the 30th September 2022. If you make changes to the styles of your website after this date , this may cause problems</li>
+						<li>You can restore your theme by using the <em>Restore</em> button. This will remove the critical css from your theme and let you continue without it</li>
+					</ol>
+				</div>
 				{this.showGenerateBanner()}
 				{this.showRestoreBanner()}
 				{this.showError()}
